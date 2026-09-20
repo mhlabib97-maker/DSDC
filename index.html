@@ -12,8 +12,12 @@
     
     <!-- Framework & Fonts -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800;900&amp;display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+    <!-- Supabase JS CDN (Backend: DB + Auth + Storage) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800;900&amp;display=block" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet">
     
     <script id="tailwind-config">
         tailwind.config = {
@@ -55,6 +59,15 @@
         .material-symbols-outlined {
             font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
             vertical-align: middle;
+            /* Prevent FOUC: hide fallback text until font loads, fixed metrics */
+            font-display: block;
+            line-height: 1;
+            overflow: hidden;
+            display: inline-block;
+        }
+        /* Hide Material Symbols text flash before font loads */
+        .material-symbols-outlined:not(.fonts-loaded) {
+            visibility: hidden;
         }
 
         @keyframes nebula-float {
@@ -472,6 +485,98 @@
             }
         }
     </style>
+    <script>document.fonts && document.fonts.ready.then(function(){document.documentElement.classList.add('fonts-loaded'); document.querySelectorAll('.material-symbols-outlined').forEach(function(el){el.style.visibility='visible';});});</script>
+
+    <!-- ============================================================
+     SUPABASE SETUP — Run this SQL in Supabase SQL Editor (Part 1)
+     ============================================================
+     -- 1. profiles table linked to auth.users
+     create table if not exists public.profiles (
+       id uuid primary key references auth.users(id) on delete cascade,
+       full_name text,
+       role text not null check (role in ('debater','admin')) default 'debater',
+       level text check (level in ('beginner','intermediate','advanced')),
+       created_at timestamptz default now()
+     );
+     alter table public.profiles enable row level security;
+     -- RLS: user can read own row
+     create policy "Users can read own profile"
+       on public.profiles for select
+       using (auth.uid() = id);
+     -- RLS: user can insert own profile (via trigger, but allow)
+     create policy "Users can insert own profile"
+       on public.profiles for insert
+       with check (auth.uid() = id);
+     -- RLS: user can update own full_name only (role/level blocked)
+     -- We enforce via policy using check on role/level unchanged; simpler: allow update but use trigger to block role change
+     -- For now: allow user to update own full_name; role/level updates will be blocked by trigger below
+     create policy "Users can update own full_name"
+       on public.profiles for update
+       using (auth.uid() = id)
+       with check (auth.uid() = id);
+     -- Trigger to auto-create profile on signup
+     create or replace function public.handle_new_user()
+     returns trigger as $$
+     begin
+       insert into public.profiles (id, full_name, role)
+       values (new.id, new.raw_user_meta_data->>'full_name', 'debater');
+       return new;
+     end;
+     $$ language plpgsql security definer;
+     drop trigger if exists on_auth_user_created on auth.users;
+     create trigger on_auth_user_created
+       after insert on auth.users
+       for each row execute procedure public.handle_new_user();
+     -- Block non-admin role/level changes (users cannot escalate themselves)
+     create or replace function public.prevent_role_escalation()
+     returns trigger as $$
+     begin
+       -- Allow admins to change any role/level; check if current user is admin
+       if exists (select 1 from public.profiles where id = auth.uid() and role = 'admin') then
+         return new;
+       end if;
+       -- Non-admins: ensure role and level are not changed
+       if old.role is distinct from new.role or old.level is distinct from new.level then
+         raise exception 'Only admins can change role/level';
+       end if;
+       return new;
+     end;
+     $$ language plpgsql security definer;
+     drop trigger if exists prevent_role_escalation_trigger on public.profiles;
+     create trigger prevent_role_escalation_trigger
+       before update on public.profiles
+       for each row execute procedure public.prevent_role_escalation();
+     -- 2. site_updates table
+     create table if not exists public.site_updates (
+       id uuid primary key default gen_random_uuid(),
+       title text not null,
+       body text not null,
+       image_url text,
+       published_at timestamptz default now(),
+       created_at timestamptz default now()
+     );
+     alter table public.site_updates enable row level security;
+     -- Anyone (including anon) can read
+     create policy "Anyone can read site_updates"
+       on public.site_updates for select
+       using (true);
+     -- Only admins can write
+     create policy "Only admins can insert site_updates"
+       on public.site_updates for insert
+       with check (exists (select 1 from public.profiles where id = auth.uid() and role = 'admin'));
+     create policy "Only admins can update site_updates"
+       on public.site_updates for update
+       using (exists (select 1 from public.profiles where id = auth.uid() and role = 'admin'));
+     create policy "Only admins can delete site_updates"
+       on public.site_updates for delete
+       using (exists (select 1 from public.profiles where id = auth.uid() and role = 'admin'));
+     -- How to manually promote a user to admin (run in SQL Editor):
+     -- 1. Sign up via the site, then find your user id in auth.users or profiles
+     -- 2. Run: update public.profiles set role = 'admin' where id = 'YOUR_USER_UUID';
+     --    or: update public.profiles set role = 'admin' where full_name = 'Your Name';
+     -- Verify: select id, full_name, role from public.profiles;
+     ============================================================ -->
+
 </head>
 <body class="bg-surface text-on-surface selection:bg-primary-container selection:text-on-primary-container font-hanken overflow-x-hidden">
     
@@ -528,12 +633,24 @@
                 <a class="nav-link text-on-surface-variant hover:text-primary transition-all" id="nav-link-events" href="#" onclick="showPage('page-events'); return false;">Events</a>
                 <a class="nav-link text-on-surface-variant hover:text-primary transition-all" id="nav-link-achieve" href="#" onclick="showPage('page-achievements'); return false;">Achievements</a>
                 <a class="nav-link text-on-surface-variant hover:text-primary transition-all" id="nav-link-contact" href="#" onclick="showPage('page-contact'); return false;">Contact</a>
+                <!-- Courses (gated: debater/admin only) -->
+                <a id="nav-courses" class="nav-link text-on-surface-variant hover:text-primary transition-all hidden" href="#" onclick="handleCoursesNav(); return false;">Courses</a>
+                <!-- Admin Panel (gated: admin only) -->
+                <a id="nav-admin" class="nav-link text-on-surface-variant hover:text-primary transition-all hidden" href="#" onclick="requireRole('admin') && showPage('page-admin'); return false;">Admin</a>
+                <!-- Auth state: Log in / User -->
+                <div id="nav-auth-desktop" class="flex items-center gap-2 ml-2">
+                    <a id="nav-login-btn" href="#" onclick="showPage('page-auth'); return false;" class="text-on-surface-variant hover:text-primary transition-all text-[11px] lg:text-xs uppercase tracking-widest font-bold border border-white/10 rounded-full px-4 py-2 hover:border-primary/40">Log in</a>
+                    <div id="nav-user-menu" class="hidden items-center gap-2">
+                        <span id="nav-user-name" class="text-primary text-[11px] lg:text-xs font-bold tracking-widest uppercase max-w-[120px] truncate"></span>
+                        <a href="#" onclick="handleLogout(); return false;" class="text-on-surface-variant/60 hover:text-primary text-[10px] uppercase tracking-widest font-bold">Log out</a>
+                    </div>
+                </div>
                 <a class="ml-4 bg-primary-container text-on-primary px-6 lg:px-8 py-2.5 lg:py-3 rounded-xl font-black hover:shadow-[0_0_20px_rgba(0,166,251,0.4)] transition-all active:scale-95 flex items-center justify-center shrink-0" href="https://docs.google.com/forms/d/e/1FAIpQLSdWVruClouwYDEAJD6aI_YL2etwzJRMTVCD_VP8pSbqN35jzA/viewform" target="_blank" rel="noopener noreferrer">Join Club</a>
             </div>
 
             <!-- Hamburger Button for Mobile -->
             <button class="md:hidden mobile-menu-toggle text-white p-2 shrink-0" onclick="toggleMobileMenu()" aria-label="Menu" aria-expanded="false" aria-controls="mobileMenu">
-                <span class="material-symbols-outlined text-3xl">menu</span>
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
             </button>
 
         </div>
@@ -568,6 +685,16 @@
             <a class="text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2 border-b border-white/5" href="#" onclick="showPage('page-events'); closeMobileMenu(); return false;">Events</a>
             <a class="text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2 border-b border-white/5" href="#" onclick="showPage('page-achievements'); closeMobileMenu(); return false;">Achievements</a>
             <a class="text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2" href="#" onclick="showPage('page-contact'); closeMobileMenu(); return false;">Contact Base</a>
+            <!-- Courses (gated) -->
+            <a id="mobile-nav-courses" class="hidden text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2 border-b border-white/5" href="#" onclick="handleCoursesNav(); closeMobileMenu(); return false;">Courses (coming soon)</a>
+            <!-- Admin (gated) -->
+            <a id="mobile-nav-admin" class="hidden text-primary hover:text-primary transition-all uppercase tracking-widest text-[11px] font-black py-2 border-b border-white/5" href="#" onclick="requireRole('admin') && showPage('page-admin'); closeMobileMenu(); return false;">Admin Panel</a>
+            <!-- Auth mobile -->
+            <a id="mobile-nav-login" class="text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2" href="#" onclick="showPage('page-auth'); closeMobileMenu(); return false;">Log in</a>
+            <div id="mobile-nav-user" class="hidden flex-col gap-2 py-2 border-t border-white/5 mt-2">
+                <span id="mobile-nav-user-name" class="text-primary text-[11px] font-bold tracking-widest uppercase"></span>
+                <a href="#" onclick="handleLogout(); closeMobileMenu(); return false;" class="text-on-surface-variant/60 hover:text-primary text-[10px] uppercase tracking-widest font-bold">Log out</a>
+            </div>
         </div>
     </nav>
 
@@ -1958,6 +2085,26 @@
                     </div>
                 </section>
 
+                <!-- Site Updates Feed — Dynamic from Supabase site_updates (Admin managed) -->
+                <section id="site-updates-feed" class="py-12 md:py-20 px-4 sm:px-6 md:px-16 relative border-t border-white/5">
+                    <div class="max-w-7xl mx-auto relative z-10">
+                        <div class="flex flex-col md:flex-row items-center md:items-end justify-between mb-8 md:mb-12 reveal active text-center md:text-left">
+                            <div>
+                                <span class="text-[#94ccff] tracking-[0.4em] uppercase text-[9px] md:text-[10px] mb-2 block font-extrabold opacity-70">Club Updates</span>
+                                <h2 class="text-3xl sm:text-4xl md:text-5xl text-white font-black italic uppercase tracking-tighter">Latest <span class="text-gradient-cyan glow-cyan">Updates</span></h2>
+                                <div class="w-20 h-1 bg-gradient-to-r from-primary-container to-transparent rounded-full mx-auto md:mx-0 mt-3"></div>
+                            </div>
+                            <p class="text-on-surface-variant text-xs md:text-sm mt-4 md:mt-0 max-w-sm">Curated by the Admin Panel — replaces hardcoded news.</p>
+                        </div>
+                        <div id="home-updates-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+                            <!-- JS will inject site_updates here -->
+                            <div class="glass-card rounded-2xl p-6 md:p-8 border border-white/5 text-center">
+                                <p class="text-on-surface-variant text-sm">No updates yet. Admins can add posts via the Admin Panel → Site Updates.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
                 <!-- Newsletter / CTA -->
                 <section class="py-16 md:py-24 px-4 sm:px-6 md:px-16 relative overflow-hidden border-t border-white/5">
                     <div class="absolute inset-0 bg-[#00a6fb]/5 backdrop-blur-3xl"></div>
@@ -2188,7 +2335,10 @@
                     <input type="text" id="contact-name" class="bg-[#181e36] border border-outline-variant/30 p-3.5 md:p-4 rounded-xl text-white placeholder-on-surface-variant/50 text-xs md:text-sm focus:outline-none focus:border-primary focus:ring-0 transition-all font-hanken" placeholder="Your Name" required="">
                     <input type="email" id="contact-email" class="bg-[#181e36] border border-outline-variant/30 p-3.5 md:p-4 rounded-xl text-white placeholder-on-surface-variant/50 text-xs md:text-sm focus:outline-none focus:border-primary focus:ring-0 transition-all font-hanken" placeholder="Your Email" required="">
                     <textarea id="contact-message" class="bg-[#181e36] border border-outline-variant/30 p-3.5 md:p-4 rounded-xl text-white placeholder-on-surface-variant/50 text-xs md:text-sm min-h-[100px] md:min-h-[120px] focus:outline-none focus:border-primary focus:ring-0 transition-all font-hanken" placeholder="Your Message" required=""></textarea>
-                    <button type="submit" class="btn-primary w-full py-3.5 md:py-4 text-[#040e1f] bg-[#00a6fb] hover:bg-[#00a6fb]/90 font-black tracking-widest uppercase text-[10px] md:text-xs rounded-xl shadow-lg transition-all active:scale-95">Send Message</button>
+                    <!-- Honeypot: hidden from users, bots may fill it -->
+                    <input type="text" id="contact-website" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute; left:-9999px; top:auto; width:1px; height:1px; overflow:hidden;" placeholder="Leave this field empty">
+                    <button type="submit" id="contact-submit-btn" class="btn-primary w-full py-3.5 md:py-4 text-[#040e1f] bg-[#00a6fb] hover:bg-[#00a6fb]/90 font-black tracking-widest uppercase text-[10px] md:text-xs rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed">Send Message</button>
+                    <p id="contact-status" class="hidden text-xs rounded-lg p-3 border text-center"></p>
                 </form>
                 
                 <div class="contact-info text-center mt-6 md:mt-8 text-xs md:text-sm text-on-surface-variant leading-relaxed">
@@ -2208,6 +2358,166 @@
                     <a href="https://www.facebook.com/pagedsdc/" target="_blank" rel="noopener noreferrer" class="social-link px-3 py-1.5 md:px-4 md:py-2 border border-outline-variant/30 rounded-lg hover:text-secondary hover:border-secondary transition-colors text-[9px] md:text-[10px] font-bold tracking-widest uppercase">Facebook</a>
                     <a href="https://www.instagram.com/dsdc_official_?igsi=eHE3eGdna29mdHd6" target="_blank" rel="noopener noreferrer" class="social-link px-3 py-1.5 md:px-4 md:py-2 border border-outline-variant/30 rounded-lg hover:text-secondary hover:border-secondary transition-colors text-[9px] md:text-[10px] font-bold tracking-widest uppercase">Instagram</a>
                     <a href="https://www.youtube.com/@DSDC-YT" target="_blank" rel="noopener noreferrer" class="social-link px-3 py-1.5 md:px-4 md:py-2 border border-outline-variant/30 rounded-lg hover:text-secondary hover:border-secondary transition-colors text-[9px] md:text-[10px] font-bold tracking-widest uppercase">YouTube</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- AUTH PAGE — Login / Signup (Part 2) -->
+        <div id="page-auth" class="page hidden bg-[#0b1229] bg-mesh overflow-hidden relative min-h-screen" tabindex="-1">
+            <div class="nebula-blob bg-[#00a6fb]/10 top-[-15%] left-[-10%]"></div>
+            <div class="nebula-blob bg-[#e9c400]/5 bottom-[-15%] right-[-10%]"></div>
+            <div class="floating-bg-text top-40 -left-20">AUTH</div>
+            <div class="floating-bg-text bottom-40 -right-20">ACCESS</div>
+            <div class="relative z-10 max-w-md mx-auto px-4 py-12 md:py-20">
+                <div class="text-center mb-8">
+                    <span class="text-[#94ccff] tracking-[0.3em] uppercase text-[10px] md:text-xs font-extrabold">DSDC Access</span>
+                    <h1 id="auth-title" class="text-3xl md:text-4xl text-white font-black italic uppercase tracking-tighter mt-2">Log in</h1>
+                    <div class="w-16 h-0.5 bg-gradient-to-r from-primary-container to-transparent mx-auto mt-3 rounded-full"></div>
+                </div>
+                <!-- Toggle -->
+                <div class="flex glass-card rounded-full p-1 mb-6 border border-white/5 max-w-xs mx-auto">
+                    <button id="auth-tab-login" onclick="switchAuthMode('login')" class="flex-1 py-2 rounded-full bg-primary-container text-on-primary font-black text-xs uppercase tracking-widest transition-all">Log in</button>
+                    <button id="auth-tab-signup" onclick="switchAuthMode('signup')" class="flex-1 py-2 rounded-full text-on-surface-variant font-bold text-xs uppercase tracking-widest hover:text-white transition-all">Sign up</button>
+                </div>
+                <!-- Form -->
+                <div class="glass-card rounded-2xl p-6 md:p-8 border border-white/10 shadow-2xl">
+                    <form id="auth-form" onsubmit="handleAuth(event)" class="flex flex-col gap-4">
+                        <div id="auth-fullname-wrap" class="hidden flex-col gap-1">
+                            <label class="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">Full name</label>
+                            <input id="auth-fullname" type="text" placeholder="e.g., Rahat Khan" class="bg-[#181e36] border border-outline-variant/30 p-3.5 rounded-xl text-white placeholder-on-surface-variant/50 text-sm focus:outline-none focus:border-primary transition-all">
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">Email</label>
+                            <input id="auth-email" type="email" placeholder="you@example.com" required class="bg-[#181e36] border border-outline-variant/30 p-3.5 rounded-xl text-white placeholder-on-surface-variant/50 text-sm focus:outline-none focus:border-primary transition-all">
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">Password</label>
+                            <input id="auth-password" type="password" placeholder="••••••••" required class="bg-[#181e36] border border-outline-variant/30 p-3.5 rounded-xl text-white placeholder-on-surface-variant/50 text-sm focus:outline-none focus:border-primary transition-all">
+                        </div>
+                        <p id="auth-error" class="hidden text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg p-3"></p>
+                        <p id="auth-success" class="hidden text-xs text-green-400 bg-green-500/10 border border-green-500/20 rounded-lg p-3"></p>
+                        <button id="auth-submit" type="submit" class="mt-2 w-full py-3.5 bg-[#00a6fb] hover:bg-[#00a6fb]/90 text-white font-black uppercase tracking-widest text-xs rounded-xl shadow-lg transition-all active:scale-95">Log in</button>
+                    </form>
+                    <p class="text-center text-[10px] text-on-surface-variant mt-4">Public signup creates a <span class="text-white font-bold">debater</span> account. Admin is granted manually in Supabase.</p>
+                </div>
+                <!-- Logged-in state -->
+                <div id="auth-loggedin" class="hidden glass-card rounded-2xl p-6 border border-white/10 text-center mt-6">
+                    <p class="text-white font-bold">You are logged in as <span id="auth-loggedin-name" class="text-primary"></span></p>
+                    <p id="auth-loggedin-role" class="text-xs text-on-surface-variant mt-1"></p>
+                    <button onclick="handleLogout()" class="mt-4 px-6 py-2 border border-white/10 rounded-full text-xs uppercase tracking-widest font-bold hover:bg-white/5">Log out</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- COURSES PLACEHOLDER — gated by debater/admin (Part 2) -->
+        <div id="page-courses" class="page hidden bg-[#0b1229] bg-mesh overflow-hidden relative min-h-screen" tabindex="-1">
+            <div class="nebula-blob bg-[#00a6fb]/10 top-[-15%] left-[-10%]"></div>
+            <div class="floating-bg-text top-40 -left-20">COURSES</div>
+            <div class="relative z-10 max-w-3xl mx-auto px-4 py-12 md:py-20 text-center">
+                <span class="text-[#94ccff] tracking-[0.3em] uppercase text-[10px] font-extrabold">Members Only</span>
+                <h1 class="text-3xl md:text-5xl text-white font-black italic uppercase tracking-tighter mt-2">Courses <span class="text-gradient-cyan">(coming soon)</span></h1>
+                <div class="glass-card rounded-2xl p-8 md:p-12 border border-white/5 mt-8">
+                    <p class="text-on-surface-variant text-sm md:text-base leading-relaxed">Our structured debate curriculum — beginner to advanced — is being built. This placeholder is gated by <code class="bg-white/10 px-2 py-0.5 rounded text-white">requireRole('debater')</code>. Visitors who are not logged in will be redirected to Log in.</p>
+                    <div class="mt-6 flex justify-center gap-3">
+                        <a href="#" onclick="showPage('page-auth'); return false;" class="px-6 py-3 bg-primary-container text-on-primary font-black rounded-xl text-xs uppercase tracking-widest">Log in to access</a>
+                        <a href="#" onclick="showHome(); return false;" class="px-6 py-3 glass-card border border-white/10 text-white font-bold rounded-xl text-xs uppercase tracking-widest">Back Home</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ADMIN PANEL — private, admin only (Part 3) -->
+        <div id="page-admin" class="page hidden bg-[#081425] bg-mesh overflow-hidden relative min-h-screen" tabindex="-1">
+            <div class="nebula-blob bg-[#00a6fb]/10 top-[-15%] left-[-10%]"></div>
+            <div class="floating-bg-text top-40 -left-20">ADMIN</div>
+            <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 md:px-16 py-8 md:py-12">
+                <div class="text-center mb-8">
+                    <span class="text-[#94ccff] tracking-[0.3em] uppercase text-[10px] md:text-xs font-extrabold">Private — Admin Only</span>
+                    <h1 class="text-3xl md:text-5xl text-white font-black italic uppercase tracking-tighter mt-2">Admin <span class="text-gradient-cyan">Panel</span></h1>
+                    <p class="text-on-surface-variant text-xs md:text-sm mt-2">Database visibility, content editing, submission viewing</p>
+                </div>
+                <!-- Admin sub-nav -->
+                <div class="flex gap-2 md:gap-3 justify-center flex-wrap mb-8">
+                    <button onclick="switchAdminTab('submissions')" id="admin-tab-submissions" class="admin-tab active px-4 md:px-6 py-2.5 rounded-full bg-primary-container text-on-primary font-black text-[10px] md:text-xs uppercase tracking-widest">Contact Submissions</button>
+                    <button onclick="switchAdminTab('updates')" id="admin-tab-updates" class="admin-tab px-4 md:px-6 py-2.5 rounded-full glass-card border border-white/10 text-on-surface-variant font-bold text-[10px] md:text-xs uppercase tracking-widest hover:bg-white/5">Site Updates</button>
+                    <button onclick="switchAdminTab('courses')" id="admin-tab-courses" class="admin-tab px-4 md:px-6 py-2.5 rounded-full glass-card border border-white/10 text-on-surface-variant font-bold text-[10px] md:text-xs uppercase tracking-widest opacity-60">Courses (coming soon)</button>
+                    <button onclick="switchAdminTab('forms')" id="admin-tab-forms" class="admin-tab px-4 md:px-6 py-2.5 rounded-full glass-card border border-white/10 text-on-surface-variant font-bold text-[10px] md:text-xs uppercase tracking-widest opacity-60">Forms (coming soon)</button>
+                </div>
+
+                <!-- Submissions viewer -->
+                <div id="admin-panel-submissions" class="admin-panel">
+                    <div class="glass-card rounded-2xl border border-white/10 overflow-hidden">
+                        <div class="p-4 md:p-6 border-b border-white/5 flex justify-between items-center">
+                            <h3 class="text-white font-black uppercase tracking-widest text-xs md:text-sm">Contact Submissions <span class="text-on-surface-variant font-normal normal-case tracking-normal">— newest first</span></h3>
+                            <button onclick="loadSubmissions()" class="text-[10px] uppercase tracking-widest font-bold px-3 py-1.5 rounded-full border border-white/10 hover:bg-white/5">Refresh</button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="bg-white/5">
+                                    <tr class="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">
+                                        <th class="px-4 py-3">Date</th>
+                                        <th class="px-4 py-3">Name</th>
+                                        <th class="px-4 py-3">Email</th>
+                                        <th class="px-4 py-3">Message</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="submissions-tbody" class="text-sm text-on-surface-variant">
+                                    <tr><td colspan="4" class="px-4 py-8 text-center opacity-60">Loading…</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Site Updates manager -->
+                <div id="admin-panel-updates" class="admin-panel hidden">
+                    <div class="grid md:grid-cols-2 gap-6 md:gap-8">
+                        <div class="glass-card rounded-2xl p-6 border border-white/10">
+                            <h3 id="updates-form-title" class="text-white font-black uppercase tracking-widest text-xs mb-4">Create new update</h3>
+                            <form id="updates-form" onsubmit="handleUpdatesSubmit(event)" class="flex flex-col gap-3">
+                                <input type="hidden" id="updates-edit-id">
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">Title</label>
+                                    <input id="updates-title" type="text" required placeholder="e.g., 6th DSDC Nationals announced" class="bg-[#181e36] border border-outline-variant/30 p-3 rounded-xl text-white text-sm focus:outline-none focus:border-primary">
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">Body</label>
+                                    <textarea id="updates-body" required rows="4" placeholder="Details, dates, links…" class="bg-[#181e36] border border-outline-variant/30 p-3 rounded-xl text-white text-sm focus:outline-none focus:border-primary"></textarea>
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">Image URL (optional)</label>
+                                    <input id="updates-image" type="url" placeholder="https://..." class="bg-[#181e36] border border-outline-variant/30 p-3 rounded-xl text-white text-sm focus:outline-none focus:border-primary">
+                                </div>
+                                <p id="updates-error" class="hidden text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg p-2"></p>
+                                <div class="flex gap-2">
+                                    <button type="submit" id="updates-submit-btn" class="flex-1 py-3 bg-[#00a6fb] text-white font-black uppercase tracking-widest text-xs rounded-xl">Create</button>
+                                    <button type="button" onclick="resetUpdatesForm()" class="px-4 py-3 glass-card border border-white/10 rounded-xl text-xs uppercase tracking-widest font-bold hover:bg-white/5">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="glass-card rounded-2xl p-6 border border-white/10">
+                            <h3 class="text-white font-black uppercase tracking-widest text-xs mb-4">Existing updates</h3>
+                            <div id="updates-list" class="flex flex-col gap-3 max-h-[520px] overflow-y-auto pr-1">
+                                <p class="text-on-surface-variant text-sm">Loading…</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Placeholder stubs -->
+                <div id="admin-panel-courses" class="admin-panel hidden">
+                    <div class="glass-card rounded-2xl p-12 border border-white/10 text-center border-dashed">
+                        <span class="material-symbols-outlined text-4xl text-on-surface-variant/40">school</span>
+                        <h3 class="text-white font-black uppercase tracking-widest mt-3">Courses (coming soon)</h3>
+                        <p class="text-on-surface-variant text-sm mt-2">This slot will host the Courses CRUD in a later prompt.</p>
+                    </div>
+                </div>
+                <div id="admin-panel-forms" class="admin-panel hidden">
+                    <div class="glass-card rounded-2xl p-12 border border-white/10 text-center border-dashed">
+                        <span class="material-symbols-outlined text-4xl text-on-surface-variant/40">description</span>
+                        <h3 class="text-white font-black uppercase tracking-widest mt-3">Forms (coming soon)</h3>
+                        <p class="text-on-surface-variant text-sm mt-2">This slot will host the Form Builder in a later prompt.</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2375,17 +2685,61 @@
         }
 
         // Direct mail dispatch handler
-        function sendEmail(event) {
+        // Contact form — POST to Vercel /api/contact (Resend + Supabase service_role)
+        // Honeypot 'website' field silently succeeds if filled (bot)
+        async function sendEmail(event) {
             event.preventDefault();
-            const name = document.getElementById('contact-name').value;
-            const email = document.getElementById('contact-email').value;
-            const message = document.getElementById('contact-message').value;
-            
-            const subject = `Message from ${name} (${email}) - DSDC Contact Form`;
-            const body = `Hello DSDC Team,\n\nYou have received a new message through the DSDC website contact portal:\n\nSender Name: ${name}\nSender Email: ${email}\n\nMessage content:\n-----------------------------------------\n${message}\n-----------------------------------------\n\nBest regards,\nStatic Form Integration Agent`;
-            
-            const mailtoUrl = `mailto:dsdc.bw@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-            window.location.href = mailtoUrl;
+            const nameEl = document.getElementById('contact-name');
+            const emailEl = document.getElementById('contact-email');
+            const messageEl = document.getElementById('contact-message');
+            const websiteEl = document.getElementById('contact-website');
+            const btn = document.getElementById('contact-submit-btn');
+            const status = document.getElementById('contact-status');
+            const name = nameEl.value.trim();
+            const email = emailEl.value.trim();
+            const message = messageEl.value.trim();
+            const website = websiteEl ? websiteEl.value : '';
+            // Inline helper to show status (same UX pattern as before, don't navigate away)
+            function showStatus(msg, isError) {
+                if (!status) return;
+                status.textContent = msg;
+                status.className = isError
+                    ? 'text-xs rounded-lg p-3 border text-center bg-red-500/10 border-red-500/20 text-red-400'
+                    : 'text-xs rounded-lg p-3 border text-center bg-green-500/10 border-green-500/20 text-green-400';
+                status.classList.remove('hidden');
+            }
+            function hideStatus() { if (status) status.classList.add('hidden'); }
+            hideStatus();
+            // Client-side quick validation (server validates again)
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!name) { showStatus('Please enter your name.', true); return; }
+            if (!email || !emailRegex.test(email)) { showStatus('Please enter a valid email address.', true); return; }
+            if (!message) { showStatus('Please enter a message.', true); return; }
+            // Sending state
+            const origText = btn ? btn.textContent : 'Send Message';
+            if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+            try {
+                const res = await fetch('/api/contact', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, message, website })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data.ok) {
+                    const msg = data.error || 'Could not send message. Please try again.';
+                    showStatus(msg, true);
+                } else {
+                    showStatus('Message sent! We\'ll get back to you soon.', false);
+                    // Clear form on success
+                    nameEl.value = ''; emailEl.value = ''; messageEl.value = ''; if (websiteEl) websiteEl.value = '';
+                }
+            } catch (err) {
+                console.error('contact fetch error', err);
+                // If running on GitHub Pages (no /api), fetch will 404 — explain
+                showStatus('Could not send right now. Please try again after the site is deployed on Vercel, or email us directly at dsdc.bw@gmail.com.', true);
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = origText; }
+            }
         }
 
         function toggleMobileMenu() {
@@ -2593,6 +2947,405 @@
                 nav.classList.remove('py-2', 'bg-surface/80');
             }
         });
+
+        // ============================================================
+        // SUPABASE BACKEND / AUTH / ROLES / ADMIN PANEL (Part 2 & 3)
+        // Single static HTML + vanilla JS approach — no build tools
+        // Supabase IS the backend (DB + Auth + Storage via CDN)
+        // ============================================================
+        const SUPABASE_URL = "https://cqfmmxepnuathgxkvwfl.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_m2zuX_OrINLpK2lViTTdyQ_1MwodSq3";
+        const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+        let currentUser = null;
+        let currentProfile = null; // {id, full_name, role, level}
+
+        // Reusable role gate — use for any section: requireRole('debater' | 'admin')
+        function requireRole(role) {
+            if (!currentUser || !currentProfile) return false;
+            const r = (currentProfile.role || 'debater').toLowerCase();
+            if (role === 'admin') return r === 'admin';
+            if (role === 'debater') return r === 'debater' || r === 'admin';
+            return false;
+        }
+        function isAdmin() { return requireRole('admin'); }
+        function isDebater() { return requireRole('debater'); }
+
+        function friendlyAuthError(err) {
+            if (!err) return "Something went wrong. Please try again.";
+            const msg = (err.message || "").toLowerCase();
+            if (msg.includes("invalid login") || msg.includes("invalid credentials") || msg.includes("email not confirmed")) return "Incorrect email or password. Please try again.";
+            if (msg.includes("user already registered") || msg.includes("already exists")) return "An account with this email already exists. Try logging in.";
+            if (msg.includes("password should be at least")) return "Password should be at least 6 characters.";
+            if (msg.includes("unable to validate")) return "Unable to verify. Please check your details.";
+            if (msg.includes("email rate limit") || msg.includes("over_email_send_rate_limit")) return "Too many attempts. Please wait a moment and try again.";
+            // Fallback: generic, non-technical
+            return "We couldn't complete that. Please check your details and try again.";
+        }
+
+        function updateNavVisibility() {
+            const loggedIn = !!currentUser;
+            const deb = isDebater();
+            const admin = isAdmin();
+            // Desktop
+            const courses = document.getElementById('nav-courses');
+            const adminLink = document.getElementById('nav-admin');
+            const loginBtn = document.getElementById('nav-login-btn');
+            const userMenu = document.getElementById('nav-user-menu');
+            const userNameEl = document.getElementById('nav-user-name');
+            if (courses) courses.classList.toggle('hidden', !deb);
+            if (adminLink) adminLink.classList.toggle('hidden', !admin);
+            if (loginBtn) loginBtn.classList.toggle('hidden', loggedIn);
+            if (userMenu) { userMenu.classList.toggle('hidden', !loggedIn); userMenu.classList.toggle('flex', loggedIn); }
+            if (userNameEl && loggedIn) userNameEl.textContent = currentProfile?.full_name || currentUser?.email?.split('@')[0] || 'Account';
+            // Mobile
+            const mCourses = document.getElementById('mobile-nav-courses');
+            const mAdmin = document.getElementById('mobile-nav-admin');
+            const mLogin = document.getElementById('mobile-nav-login');
+            const mUser = document.getElementById('mobile-nav-user');
+            const mUserName = document.getElementById('mobile-nav-user-name');
+            if (mCourses) mCourses.classList.toggle('hidden', !deb);
+            if (mAdmin) mAdmin.classList.toggle('hidden', !admin);
+            if (mLogin) mLogin.classList.toggle('hidden', loggedIn);
+            if (mUser) { mUser.classList.toggle('hidden', !loggedIn); mUser.classList.toggle('flex', loggedIn); }
+            if (mUserName && loggedIn) mUserName.textContent = currentProfile?.full_name || currentUser?.email || '';
+        }
+
+        async function fetchProfile() {
+            if (!currentUser || !supabase) return null;
+            const { data, error } = await supabase.from('profiles').select('id, full_name, role, level').eq('id', currentUser.id).single();
+            if (error) {
+                console.warn('profiles fetch', error);
+                return null;
+            }
+            currentProfile = data;
+            return data;
+        }
+
+        async function checkSession() {
+            if (!supabase) return;
+            const { data: { session } } = await supabase.auth.getSession();
+            currentUser = session?.user || null;
+            if (currentUser) {
+                await fetchProfile();
+            } else {
+                currentProfile = null;
+            }
+            updateNavVisibility();
+            updateAuthPageUI();
+            loadHomeUpdates(); // always load feed (public)
+        }
+
+        // Auth UI toggle
+        let authMode = 'login';
+        function switchAuthMode(mode) {
+            authMode = mode;
+            const tLogin = document.getElementById('auth-tab-login');
+            const tSignup = document.getElementById('auth-tab-signup');
+            const title = document.getElementById('auth-title');
+            const submit = document.getElementById('auth-submit');
+            const wrap = document.getElementById('auth-fullname-wrap');
+            const err = document.getElementById('auth-error');
+            const ok = document.getElementById('auth-success');
+            if (err) err.classList.add('hidden');
+            if (ok) ok.classList.add('hidden');
+            if (mode === 'login') {
+                tLogin.className = "flex-1 py-2 rounded-full bg-primary-container text-on-primary font-black text-xs uppercase tracking-widest transition-all";
+                tSignup.className = "flex-1 py-2 rounded-full text-on-surface-variant font-bold text-xs uppercase tracking-widest hover:text-white transition-all";
+                title.textContent = "Log in";
+                submit.textContent = "Log in";
+                wrap.classList.add('hidden'); wrap.classList.remove('flex');
+            } else {
+                tSignup.className = "flex-1 py-2 rounded-full bg-primary-container text-on-primary font-black text-xs uppercase tracking-widest transition-all";
+                tLogin.className = "flex-1 py-2 rounded-full text-on-surface-variant font-bold text-xs uppercase tracking-widest hover:text-white transition-all";
+                title.textContent = "Sign up";
+                submit.textContent = "Create account";
+                wrap.classList.remove('hidden'); wrap.classList.add('flex');
+            }
+        }
+        function updateAuthPageUI() {
+            const logged = !!currentUser;
+            const form = document.getElementById('auth-form');
+            const loggedDiv = document.getElementById('auth-loggedin');
+            const nameEl = document.getElementById('auth-loggedin-name');
+            const roleEl = document.getElementById('auth-loggedin-role');
+            if (form) form.parentElement.classList.toggle('hidden', logged);
+            const toggle = document.querySelector('#page-auth .flex.glass-card.rounded-full');
+            if (toggle) toggle.classList.toggle('hidden', logged);
+            const title = document.getElementById('auth-title');
+            if (title && logged) title.textContent = "Welcome";
+            if (loggedDiv) loggedDiv.classList.toggle('hidden', !logged);
+            if (logged && nameEl) nameEl.textContent = currentProfile?.full_name || currentUser.email;
+            if (logged && roleEl) roleEl.textContent = `Role: ${currentProfile?.role || 'debater'}${currentProfile?.level ? ' • Level: ' + currentProfile.level : ''}`;
+        }
+        async function handleAuth(e) {
+            e.preventDefault();
+            const email = document.getElementById('auth-email').value.trim();
+            const pw = document.getElementById('auth-password').value;
+            const fullname = document.getElementById('auth-fullname').value.trim();
+            const errEl = document.getElementById('auth-error');
+            const okEl = document.getElementById('auth-success');
+            const btn = document.getElementById('auth-submit');
+            errEl.classList.add('hidden'); okEl.classList.add('hidden');
+            btn.disabled = true; btn.textContent = authMode === 'login' ? 'Logging in…' : 'Creating…';
+            try {
+                if (!supabase) throw new Error("Supabase not loaded");
+                if (authMode === 'signup') {
+                    if (!fullname) throw new Error("Please enter your full name.");
+                    const { data, error } = await supabase.auth.signUp({
+                        email, password: pw,
+                        options: { data: { full_name: fullname } }
+                    });
+                    if (error) throw error;
+                    // Trigger will create profile; if email confirmation required, inform user
+                    if (data.user && !data.session) {
+                        okEl.textContent = "Account created! Please check your email to confirm, then log in.";
+                        okEl.classList.remove('hidden');
+                    } else {
+                        // Auto-logged in
+                        await checkSession();
+                        okEl.textContent = "Account created and logged in!";
+                        okEl.classList.remove('hidden');
+                        setTimeout(()=> showHome(), 800);
+                    }
+                } else {
+                    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pw });
+                    if (error) throw error;
+                    currentUser = data.user;
+                    await fetchProfile();
+                    updateNavVisibility(); updateAuthPageUI();
+                    okEl.textContent = "Logged in successfully!";
+                    okEl.classList.remove('hidden');
+                    setTimeout(()=> showHome(), 600);
+                }
+            } catch (err) {
+                errEl.textContent = friendlyAuthError(err);
+                errEl.classList.remove('hidden');
+            } finally {
+                btn.disabled = false; btn.textContent = authMode === 'login' ? 'Log in' : 'Create account';
+            }
+        }
+        async function handleLogout() {
+            if (supabase) await supabase.auth.signOut();
+            currentUser = null; currentProfile = null;
+            updateNavVisibility(); updateAuthPageUI();
+            showHome();
+        }
+        function handleCoursesNav() {
+            if (!isDebater()) {
+                showPage('page-auth');
+                switchAuthMode('login');
+                const err = document.getElementById('auth-error');
+                if (err) { err.textContent = "Please log in with a debater account to view Courses."; err.classList.remove('hidden'); }
+                return false;
+            }
+            showPage('page-courses');
+            return false;
+        }
+        // Override showPage to protect admin + gate courses + auto-load admin submissions (Issue 3 fix)
+        const _origShowPage = window.showPage;
+        window.showPage = function(id, tab) {
+            // Gate admin
+            if (id === 'page-admin' && !isAdmin()) {
+                showPage('page-auth');
+                switchAuthMode('login');
+                const err = document.getElementById('auth-error');
+                if (err) { err.textContent = "Admin access only. Please log in with an admin account."; err.classList.remove('hidden'); }
+                return;
+            }
+            // Gate courses
+            if (id === 'page-courses' && !isDebater()) {
+                handleCoursesNav(); return;
+            }
+            // Call original and auto-load submissions when admin panel first opens (fix stuck "Loading…")
+            if (typeof _origShowPage === 'function') {
+                const ret = _origShowPage(id, tab);
+                if (id === 'page-admin') {
+                    // Defer until page is visible; only if submissions panel is active (default tab)
+                    setTimeout(() => {
+                        const panel = document.getElementById('admin-panel-submissions');
+                        if (panel && !panel.classList.contains('hidden')) {
+                            loadSubmissions();
+                        }
+                    }, 120);
+                }
+                return ret;
+            }
+            // Fallback (should not happen, but keep for safety)
+            hideAll();
+            const target = document.getElementById(id);
+            if (target) {
+                target.classList.remove('hidden');
+                setTimeout(()=> target.classList.add('active-view'), 50);
+                window.scrollTo(0,0); reinitReveal();
+            }
+            if (id === 'page-admin') setTimeout(() => loadSubmissions(), 150);
+        };
+
+        // Admin helpers
+        function switchAdminTab(which) {
+            document.querySelectorAll('.admin-tab').forEach(b=> {
+                b.classList.remove('active','bg-primary-container','text-on-primary');
+                b.classList.add('glass-card','border','border-white/10','text-on-surface-variant');
+            });
+            document.querySelectorAll('.admin-panel').forEach(p=> p.classList.add('hidden'));
+            const btn = document.getElementById('admin-tab-'+which);
+            if (btn) { btn.classList.add('active','bg-primary-container','text-on-primary'); btn.classList.remove('glass-card','border','border-white/10','text-on-surface-variant'); }
+            const panel = document.getElementById('admin-panel-'+which);
+            if (panel) panel.classList.remove('hidden');
+            if (which === 'submissions') loadSubmissions();
+            if (which === 'updates') loadAdminUpdates();
+        }
+
+        async function loadSubmissions() {
+            const tbody = document.getElementById('submissions-tbody');
+            if (!tbody || !supabase) return;
+            tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-8 text-center opacity-60">Loading…</td></tr>';
+            const { data, error } = await supabase.from('contact_submissions').select('name,email,message,created_at').order('created_at', {ascending:false});
+            if (error) {
+                tbody.innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-red-400 text-sm">Couldn't load: ${error.message}</td></tr>`;
+                return;
+            }
+            if (!data || data.length===0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-8 text-center opacity-60">No submissions yet.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = data.map(r=> `
+                <tr class="border-t border-white/5 hover:bg-white/[0.03]">
+                    <td class="px-4 py-3 text-xs whitespace-nowrap">${new Date(r.created_at).toLocaleString()}</td>
+                    <td class="px-4 py-3 font-bold text-white text-sm">${escapeHtml(r.name||'')}</td>
+                    <td class="px-4 py-3 text-xs">${escapeHtml(r.email||'')}</td>
+                    <td class="px-4 py-3 text-sm max-w-[320px] truncate" title="${escapeHtml(r.message||'')}">${escapeHtml(r.message||'')}</td>
+                </tr>
+            `).join('');
+        }
+        function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+        // Site Updates CRUD
+        async function loadHomeUpdates() {
+            const grid = document.getElementById('home-updates-grid');
+            if (!grid || !supabase) return;
+            const { data, error } = await supabase.from('site_updates').select('id,title,body,image_url,published_at').order('published_at', {ascending:false}).limit(6);
+            if (error) {
+                // Keep placeholder, log
+                console.warn('site_updates load', error);
+                return;
+            }
+            if (!data || data.length===0) {
+                grid.innerHTML = '<div class="glass-card rounded-2xl p-6 md:p-8 border border-white/5 text-center col-span-full"><p class="text-on-surface-variant text-sm">No updates yet. Admins can add posts via the Admin Panel → Site Updates.</p></div>';
+                return;
+            }
+            grid.innerHTML = data.map(u=> `
+                <div class="glass-card rounded-2xl overflow-hidden border border-white/10 flex flex-col">
+                    ${u.image_url ? `<div class="aspect-[16/9] overflow-hidden bg-[#0b1229]"><img src="${escapeHtml(u.image_url)}" alt="${escapeHtml(u.title)}" class="w-full h-full object-cover"></div>` : ''}
+                    <div class="p-6 flex flex-col flex-grow">
+                        <h3 class="text-white font-black text-lg leading-tight mb-2">${escapeHtml(u.title)}</h3>
+                        <p class="text-on-surface-variant text-sm leading-relaxed flex-grow">${escapeHtml(u.body)}</p>
+                        <span class="text-[10px] uppercase tracking-widest text-on-surface-variant/60 mt-4">${u.published_at ? new Date(u.published_at).toLocaleDateString():''}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+        async function loadAdminUpdates() {
+            const list = document.getElementById('updates-list');
+            if (!list || !supabase) return;
+            list.innerHTML = '<p class="text-on-surface-variant text-sm">Loading…</p>';
+            const { data, error } = await supabase.from('site_updates').select('*').order('published_at', {ascending:false});
+            if (error) { list.innerHTML = `<p class="text-red-400 text-sm">Error: ${escapeHtml(error.message)}</p>`; return; }
+            if (!data || data.length===0) { list.innerHTML = '<p class="text-on-surface-variant text-sm">No updates yet.</p>'; return; }
+            list.innerHTML = data.map(u=> `
+                <div class="glass-card rounded-xl p-4 border border-white/5 flex flex-col gap-2">
+                    <h4 class="text-white font-bold text-sm">${escapeHtml(u.title)}</h4>
+                    <p class="text-on-surface-variant text-xs leading-relaxed line-clamp-3">${escapeHtml(u.body)}</p>
+                    ${u.image_url ? `<a href="${escapeHtml(u.image_url)}" target="_blank" class="text-[10px] text-primary truncate">${escapeHtml(u.image_url)}</a>` : ''}
+                    <span class="text-[10px] text-on-surface-variant/60">${new Date(u.published_at||u.created_at).toLocaleString()}</span>
+                    <div class="flex gap-2 mt-2">
+                        <button onclick="editUpdate('${u.id}')" class="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-bold uppercase tracking-widest">Edit</button>
+                        <button onclick="deleteUpdate('${u.id}')" class="flex-1 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-xs font-bold uppercase tracking-widest">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        async function handleUpdatesSubmit(e){
+            e.preventDefault();
+            const id = document.getElementById('updates-edit-id').value.trim();
+            const title = document.getElementById('updates-title').value.trim();
+            const body = document.getElementById('updates-body').value.trim();
+            const image_url = document.getElementById('updates-image').value.trim() || null;
+            const errEl = document.getElementById('updates-error');
+            errEl.classList.add('hidden');
+            if (!title || !body) { errEl.textContent = "Title and body are required."; errEl.classList.remove('hidden'); return; }
+            if (!supabase) { errEl.textContent = "Supabase not configured."; errEl.classList.remove('hidden'); return; }
+            const btn = document.getElementById('updates-submit-btn');
+            btn.disabled = true; btn.textContent = id ? 'Updating…' : 'Creating…';
+            try {
+                if (id) {
+                    const { error } = await supabase.from('site_updates').update({ title, body, image_url }).eq('id', id);
+                    if (error) throw error;
+                } else {
+                    const { error } = await supabase.from('site_updates').insert({ title, body, image_url });
+                    if (error) throw error;
+                }
+                resetUpdatesForm();
+                await loadAdminUpdates(); await loadHomeUpdates();
+            } catch(err){
+                errEl.textContent = friendlyAuthError(err) + (err.message ? " — " + err.message : "");
+                errEl.classList.remove('hidden');
+            } finally { btn.disabled=false; btn.textContent = document.getElementById('updates-edit-id').value ? 'Update' : 'Create'; }
+        }
+        function resetUpdatesForm(){
+            document.getElementById('updates-edit-id').value='';
+            document.getElementById('updates-title').value='';
+            document.getElementById('updates-body').value='';
+            document.getElementById('updates-image').value='';
+            document.getElementById('updates-form-title').textContent='Create new update';
+            document.getElementById('updates-submit-btn').textContent='Create';
+            document.getElementById('updates-error').classList.add('hidden');
+        }
+        async function editUpdate(id){
+            if (!supabase) return;
+            const { data, error } = await supabase.from('site_updates').select('*').eq('id', id).single();
+            if (error) return alert(friendlyAuthError(error));
+            document.getElementById('updates-edit-id').value = data.id;
+            document.getElementById('updates-title').value = data.title;
+            document.getElementById('updates-body').value = data.body;
+            document.getElementById('updates-image').value = data.image_url || '';
+            document.getElementById('updates-form-title').textContent='Edit update';
+            document.getElementById('updates-submit-btn').textContent='Update';
+            document.getElementById('updates-form').scrollIntoView({behavior:'smooth', block:'center'});
+        }
+        async function deleteUpdate(id){
+            if (!confirm('Delete this update?')) return;
+            const { error } = await supabase.from('site_updates').delete().eq('id', id);
+            if (error) return alert(friendlyAuthError(error) + "\n" + error.message);
+            await loadAdminUpdates(); await loadHomeUpdates();
+        }
+
+        // Init auth state on load
+        window.addEventListener('DOMContentLoaded', () => {
+            checkSession();
+            // Listen for auth changes (login/logout in another tab, etc.)
+            if (supabase) supabase.auth.onAuthStateChange(async (_event, session)=>{
+                currentUser = session?.user || null;
+                if (currentUser) await fetchProfile(); else currentProfile=null;
+                updateNavVisibility(); updateAuthPageUI();
+                if (currentUser) { loadHomeUpdates(); }
+            });
+            // Also load public feed immediately (even before auth)
+            loadHomeUpdates();
+        });
+
+        // Expose for inline handlers
+        window.switchAuthMode = switchAuthMode;
+        window.handleAuth = handleAuth;
+        window.handleLogout = handleLogout;
+        window.handleCoursesNav = handleCoursesNav;
+        window.switchAdminTab = switchAdminTab;
+        window.loadSubmissions = loadSubmissions;
+        window.handleUpdatesSubmit = handleUpdatesSubmit;
+        window.resetUpdatesForm = resetUpdatesForm;
+        window.editUpdate = editUpdate;
+        window.deleteUpdate = deleteUpdate;
+        window.requireRole = requireRole;
 
         // Viewport Intersection Observer for scroll animations (Refactored to globally scoped listener)
         const revealObserver = new IntersectionObserver((entries) => {
