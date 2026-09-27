@@ -491,11 +491,11 @@
      SUPABASE SETUP — Run this SQL in Supabase SQL Editor (Part 1)
      ============================================================
      -- 1. profiles table linked to auth.users
-     create table if not exists public.profiles (
-       id uuid primary key references auth.users(id) on delete cascade,
-       full_name text,
-       role text not null check (role in ('debater','admin')) default 'debater',
-       level text check (level in ('beginner','intermediate','advanced')),
+      create table if not exists public.profiles (
+        id uuid primary key references auth.users(id) on delete cascade,
+        full_name text,
+        role text not null check (role in ('debater','admin')) default 'debater',
+        level text check (level in ('beginner','advanced','english_wing')) default 'beginner',
        created_at timestamptz default now()
      );
      alter table public.profiles enable row level security;
@@ -570,11 +570,92 @@
      create policy "Only admins can delete site_updates"
        on public.site_updates for delete
        using (exists (select 1 from public.profiles where id = auth.uid() and role = 'admin'));
-     -- How to manually promote a user to admin (run in SQL Editor):
-     -- 1. Sign up via the site, then find your user id in auth.users or profiles
-     -- 2. Run: update public.profiles set role = 'admin' where id = 'YOUR_USER_UUID';
-     --    or: update public.profiles set role = 'admin' where full_name = 'Your Name';
-     -- Verify: select id, full_name, role from public.profiles;
+      -- 3. courses table for leveled curriculum
+       create table if not exists public.courses (
+         id uuid primary key default gen_random_uuid(),
+         level text not null check (level in ('beginner','advanced','english_wing')),
+        title text not null,
+        description text, -- nullable since simplified admin form omits it; old rows may have value, new rows can be null
+        video_type text not null check (video_type in ('youtube','drive')),
+       video_url text not null,
+       "order" integer not null default 0,
+       created_at timestamptz default now()
+     );
+     alter table public.courses enable row level security;
+     create policy "Any logged-in user can read courses"
+       on public.courses for select
+       using (auth.role() = 'authenticated');
+     create policy "Only admins can insert courses"
+       on public.courses for insert
+       with check (exists (select 1 from public.profiles where id = auth.uid() and role = 'admin'));
+     create policy "Only admins can update courses"
+       on public.courses for update
+       using (exists (select 1 from public.profiles where id = auth.uid() and role = 'admin'));
+     create policy "Only admins can delete courses"
+       on public.courses for delete
+       using (exists (select 1 from public.profiles where id = auth.uid() and role = 'admin'));
+      -- 4. community_links table for WhatsApp/Messenger groups (admin-editable)
+      create table if not exists public.community_links (
+        id uuid primary key default gen_random_uuid(),
+        label text not null,
+        platform text not null check (platform in ('whatsapp','messenger')),
+        url text not null,
+        cover_image_url text,
+        "order" integer not null default 0,
+        created_at timestamptz default now()
+      );
+      alter table public.community_links enable row level security;
+      create policy "Any logged-in user can read community_links"
+        on public.community_links for select
+        using (auth.role() = 'authenticated');
+      create policy "Only admins can insert community_links"
+        on public.community_links for insert
+        with check (exists (select 1 from public.profiles where id = auth.uid() and role = 'admin'));
+      create policy "Only admins can update community_links"
+        on public.community_links for update
+        using (exists (select 1 from public.profiles where id = auth.uid() and role = 'admin'));
+      create policy "Only admins can delete community_links"
+        on public.community_links for delete
+        using (exists (select 1 from public.profiles where id = auth.uid() and role = 'admin'));
+      -- Seed with current hardcoded entries (keep placeholder URLs as-is)
+      insert into public.community_links (label, platform, url, "order") values
+        ('General Group', 'whatsapp', 'PASTE_WHATSAPP_LINK_HERE_1', 1),
+        ('Intermediate Debaters', 'whatsapp', 'PASTE_WHATSAPP_LINK_HERE_2', 2),
+        ('Advanced Debaters', 'whatsapp', 'PASTE_WHATSAPP_LINK_HERE_3', 3),
+        ('Events & Announcements', 'whatsapp', 'PASTE_WHATSAPP_LINK_HERE_4', 4),
+        ('Messenger — General', 'messenger', 'PASTE_MESSENGER_LINK_HERE_1', 5),
+        ('Messenger — Events', 'messenger', 'PASTE_MESSENGER_LINK_HERE_2', 6)
+      on conflict do nothing;
+      -- MIGRATION: Make courses.description nullable (for simplified add-course form)
+      -- alter table public.courses alter column description drop not null;
+      -- MIGRATION: Replace "Intermediate" with "English Wing" (run once if upgrading an existing DB)
+      -- Safe null-out: there shouldn't be intermediate rows yet, but handle stray data
+      -- update public.profiles set level = null where level = 'intermediate';
+      -- update public.courses set level = null where level = 'intermediate';
+      -- Drop old check constraints (names are auto-generated; find dynamically). Run this block in SQL Editor:
+      -- do $$
+      -- declare r record;
+      -- begin
+      --   for r in (select conname from pg_constraint where conrelid='public.profiles'::regclass and contype='c' and pg_get_constraintdef(oid) like '%intermediate%') loop
+      --     execute format('alter table public.profiles drop constraint %I', r.conname);
+      --   end loop;
+      --   for r in (select conname from pg_constraint where conrelid='public.courses'::regclass and contype='c' and pg_get_constraintdef(oid) like '%intermediate%') loop
+      --     execute format('alter table public.courses drop constraint %I', r.conname);
+      --   end loop;
+      -- end $$;
+      -- alter table public.profiles add constraint profiles_level_check check (level in ('beginner','advanced','english_wing'));
+      -- alter table public.courses add constraint courses_level_check check (level in ('beginner','advanced','english_wing'));
+      -- Alternative simpler form if you know constraint names (e.g. profiles_level_check / courses_level_check):
+      -- alter table public.profiles drop constraint if exists profiles_level_check;
+      -- alter table public.courses drop constraint if exists courses_level_check;
+      -- alter table public.profiles add constraint profiles_level_check check (level in ('beginner','advanced','english_wing'));
+      -- alter table public.courses add constraint courses_level_check check (level in ('beginner','advanced','english_wing'));
+      -- How to manually manage roles/levels (no admin panel yet — use SQL Editor):
+      -- Find user: select id, full_name, role, level from public.profiles;
+      -- Promote to admin: update public.profiles set role = 'admin' where id = 'YOUR_USER_UUID';
+      -- Demote: update public.profiles set role = 'debater' where id = 'YOUR_USER_UUID';
+      -- Change level: update public.profiles set level = 'english_wing' where id = 'YOUR_USER_UUID'; -- beginner/advanced/english_wing
+      -- Verify: select id, full_name, role, level from public.profiles;
      ============================================================ -->
 
 </head>
@@ -635,17 +716,30 @@
                 <a class="nav-link text-on-surface-variant hover:text-primary transition-all" id="nav-link-contact" href="#" onclick="showPage('page-contact'); return false;">Contact</a>
                 <!-- Courses (gated: debater/admin only) -->
                 <a id="nav-courses" class="nav-link text-on-surface-variant hover:text-primary transition-all hidden" href="#" onclick="handleCoursesNav(); return false;">Courses</a>
-                <!-- Admin Panel (gated: admin only) -->
-                <a id="nav-admin" class="nav-link text-on-surface-variant hover:text-primary transition-all hidden" href="#" onclick="requireRole('admin') && showPage('page-admin'); return false;">Admin</a>
-                <!-- Auth state: Log in / User -->
+
+                <!-- Auth state: Log in / Profile icon (Join Club removed — login is join) -->
                 <div id="nav-auth-desktop" class="flex items-center gap-2 ml-2">
                     <a id="nav-login-btn" href="#" onclick="showPage('page-auth'); return false;" class="text-on-surface-variant hover:text-primary transition-all text-[11px] lg:text-xs uppercase tracking-widest font-bold border border-white/10 rounded-full px-4 py-2 hover:border-primary/40">Log in</a>
-                    <div id="nav-user-menu" class="hidden items-center gap-2">
-                        <span id="nav-user-name" class="text-primary text-[11px] lg:text-xs font-bold tracking-widest uppercase max-w-[120px] truncate"></span>
-                        <a href="#" onclick="handleLogout(); return false;" class="text-on-surface-variant/60 hover:text-primary text-[10px] uppercase tracking-widest font-bold">Log out</a>
+                    <div id="nav-profile-wrap" class="hidden relative">
+                        <button id="nav-profile-btn" onclick="toggleProfileDropdown(event)" aria-label="Profile menu" aria-expanded="false" class="w-9 h-9 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-black text-sm border border-white/10 hover:shadow-[0_0_15px_rgba(0,166,251,0.3)] transition-all">
+                            <span id="nav-profile-initial" class="material-symbols-outlined text-[18px]">person</span>
+                        </button>
+                        <div id="nav-profile-dropdown" class="hidden absolute right-0 top-full mt-2 w-48 glass-card rounded-xl border border-white/10 shadow-2xl backdrop-blur-xl overflow-hidden z-50">
+                            <div class="px-4 py-3 border-b border-white/5">
+                                <p id="nav-profile-name" class="text-[11px] font-bold text-white/80 truncate"></p>
+                                <p class="text-[9px] uppercase tracking-widest text-on-surface-variant/60">Logged in</p>
+                            </div>
+                            <a id="dropdown-admin-link" href="#" onclick="closeProfileDropdown(); showPage('page-admin'); return false;" class="hidden flex items-center gap-2 px-4 py-3 text-[11px] uppercase tracking-widest font-bold text-on-surface-variant hover:text-primary hover:bg-white/5 transition-colors">
+                                <span class="material-symbols-outlined text-sm">admin_panel_settings</span> Admin Panel
+                            </a>
+                            <div id="dropdown-admin-separator" class="hidden border-t border-white/5"></div>
+                            <a href="#" onclick="handleLogout(); closeProfileDropdown(); return false;" class="flex items-center gap-2 px-4 py-3 text-[11px] uppercase tracking-widest font-bold text-on-surface-variant hover:text-primary hover:bg-white/5 transition-colors">
+                                <span class="material-symbols-outlined text-sm">logout</span> Log Out
+                            </a>
+                            <!-- Add more options later: e.g., My Profile, Settings — one line each -->
+                        </div>
                     </div>
                 </div>
-                <a class="ml-4 bg-primary-container text-on-primary px-6 lg:px-8 py-2.5 lg:py-3 rounded-xl font-black hover:shadow-[0_0_20px_rgba(0,166,251,0.4)] transition-all active:scale-95 flex items-center justify-center shrink-0" href="https://docs.google.com/forms/d/e/1FAIpQLSdWVruClouwYDEAJD6aI_YL2etwzJRMTVCD_VP8pSbqN35jzA/viewform" target="_blank" rel="noopener noreferrer">Join Club</a>
             </div>
 
             <!-- Hamburger Button for Mobile -->
@@ -659,8 +753,6 @@
         <div class="mobile-menu hidden flex-col gap-3 bg-[#0b1229]/95 backdrop-blur-xl border-b border-white/5 p-5 absolute top-full left-0 w-full z-[99]" id="mobileMenu">
             <a class="text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2 border-b border-white/5" href="#" onclick="showHome(); closeMobileMenu(); return false;">Home</a>
             <a class="text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2 border-b border-white/5" href="#" onclick="showHome(); closeMobileMenu(); setTimeout(() =&gt; document.getElementById('about').scrollIntoView({behavior:'smooth'}), 150); return false;">About DSDC</a>
-            <a class="text-[#00a6fb] hover:text-primary transition-all uppercase tracking-widest text-[11px] font-black py-2 border-b border-white/5 flex items-center gap-1" href="https://docs.google.com/forms/d/e/1FAIpQLSdWVruClouwYDEAJD6aI_YL2etwzJRMTVCD_VP8pSbqN35jzA/viewform" target="_blank" rel="noopener noreferrer" onclick="closeMobileMenu();">Join DSDC <span class="material-symbols-outlined text-sm">open_in_new</span></a>
-            
             <!-- Mobile Executive Accordion Selector -->
             <div class="border-b border-white/5">
                 <button onclick="toggleMobileDropdown(event)" class="w-full text-left text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2 flex justify-between items-center focus:outline-none">
@@ -684,15 +776,15 @@
 
             <a class="text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2 border-b border-white/5" href="#" onclick="showPage('page-events'); closeMobileMenu(); return false;">Events</a>
             <a class="text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2 border-b border-white/5" href="#" onclick="showPage('page-achievements'); closeMobileMenu(); return false;">Achievements</a>
-            <a class="text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2" href="#" onclick="showPage('page-contact'); closeMobileMenu(); return false;">Contact Base</a>
+            <a id="mobile-nav-contact" class="text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2" href="#" onclick="showPage('page-contact'); closeMobileMenu(); return false;">Contact Base</a>
             <!-- Courses (gated) -->
             <a id="mobile-nav-courses" class="hidden text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2 border-b border-white/5" href="#" onclick="handleCoursesNav(); closeMobileMenu(); return false;">Courses (coming soon)</a>
-            <!-- Admin (gated) -->
-            <a id="mobile-nav-admin" class="hidden text-primary hover:text-primary transition-all uppercase tracking-widest text-[11px] font-black py-2 border-b border-white/5" href="#" onclick="requireRole('admin') && showPage('page-admin'); closeMobileMenu(); return false;">Admin Panel</a>
+
             <!-- Auth mobile -->
             <a id="mobile-nav-login" class="text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2" href="#" onclick="showPage('page-auth'); closeMobileMenu(); return false;">Log in</a>
             <div id="mobile-nav-user" class="hidden flex-col gap-2 py-2 border-t border-white/5 mt-2">
                 <span id="mobile-nav-user-name" class="text-primary text-[11px] font-bold tracking-widest uppercase"></span>
+                <a id="mobile-dropdown-admin-link" href="#" onclick="showPage('page-admin'); closeMobileMenu(); return false;" class="hidden text-primary text-[11px] font-bold tracking-widest uppercase">Admin Panel</a>
                 <a href="#" onclick="handleLogout(); closeMobileMenu(); return false;" class="text-on-surface-variant/60 hover:text-primary text-[10px] uppercase tracking-widest font-bold">Log out</a>
             </div>
         </div>
@@ -2362,6 +2454,25 @@
             </div>
         </div>
 
+        <!-- COMMUNITY — debater-only (replaces Contact in nav for role='debater') -->
+        <div id="page-community" class="page hidden bg-[#0b1229] bg-mesh overflow-hidden relative min-h-screen" tabindex="-1">
+            <div class="nebula-blob bg-[#00a6fb]/10 top-[-15%] left-[-10%]"></div>
+            <div class="nebula-blob bg-[#25D366]/5 bottom-[-15%] right-[-10%]"></div>
+            <div class="floating-bg-text top-40 -left-20">COMMUNITY</div>
+            <div class="floating-bg-text bottom-40 -right-20">CONNECT</div>
+            <div class="relative z-10 max-w-3xl mx-auto px-4 py-12 md:py-16">
+                <div class="text-center mb-8">
+                    <span class="text-[#94ccff] tracking-[0.3em] uppercase text-[10px] md:text-xs font-extrabold">Debaters Only</span>
+                    <h1 class="text-3xl md:text-5xl text-white font-black italic uppercase tracking-tighter mt-2">Join the <span class="text-gradient-cyan">Community</span></h1>
+                    <p class="text-on-surface-variant text-xs md:text-sm mt-3 max-w-xl mx-auto">Connect with fellow debaters. Choose your group — WhatsApp or Messenger. Links are placeholders until real invites are added.</p>
+                </div>
+                <div id="community-list" class="grid gap-4 md:gap-5">
+                    <!-- JS injects COMMUNITY_LINKS here -->
+                </div>
+                <p class="text-center text-[10px] text-on-surface-variant/50 mt-6">Admins see the regular Contact page in this nav slot.</p>
+            </div>
+        </div>
+
         <!-- AUTH PAGE — Login / Signup (Part 2) -->
         <div id="page-auth" class="page hidden bg-[#0b1229] bg-mesh overflow-hidden relative min-h-screen" tabindex="-1">
             <div class="nebula-blob bg-[#00a6fb]/10 top-[-15%] left-[-10%]"></div>
@@ -2409,20 +2520,33 @@
             </div>
         </div>
 
-        <!-- COURSES PLACEHOLDER — gated by debater/admin (Part 2) -->
+        <!-- COURSES — gated, leveled, fetched from Supabase (Part 2) -->
         <div id="page-courses" class="page hidden bg-[#0b1229] bg-mesh overflow-hidden relative min-h-screen" tabindex="-1">
             <div class="nebula-blob bg-[#00a6fb]/10 top-[-15%] left-[-10%]"></div>
             <div class="floating-bg-text top-40 -left-20">COURSES</div>
-            <div class="relative z-10 max-w-3xl mx-auto px-4 py-12 md:py-20 text-center">
-                <span class="text-[#94ccff] tracking-[0.3em] uppercase text-[10px] font-extrabold">Members Only</span>
-                <h1 class="text-3xl md:text-5xl text-white font-black italic uppercase tracking-tighter mt-2">Courses <span class="text-gradient-cyan">(coming soon)</span></h1>
-                <div class="glass-card rounded-2xl p-8 md:p-12 border border-white/5 mt-8">
-                    <p class="text-on-surface-variant text-sm md:text-base leading-relaxed">Our structured debate curriculum — beginner to advanced — is being built. This placeholder is gated by <code class="bg-white/10 px-2 py-0.5 rounded text-white">requireRole('debater')</code>. Visitors who are not logged in will be redirected to Log in.</p>
-                    <div class="mt-6 flex justify-center gap-3">
-                        <a href="#" onclick="showPage('page-auth'); return false;" class="px-6 py-3 bg-primary-container text-on-primary font-black rounded-xl text-xs uppercase tracking-widest">Log in to access</a>
-                        <a href="#" onclick="showHome(); return false;" class="px-6 py-3 glass-card border border-white/10 text-white font-bold rounded-xl text-xs uppercase tracking-widest">Back Home</a>
-                    </div>
+            <div class="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 md:px-16 py-8 md:py-12">
+                <div class="text-center mb-8">
+                    <span class="text-[#94ccff] tracking-[0.3em] uppercase text-[10px] md:text-xs font-extrabold">Members Only</span>
+                    <h1 class="text-3xl md:text-5xl text-white font-black italic uppercase tracking-tighter mt-2">Courses</h1>
+                    <p class="text-on-surface-variant text-xs md:text-sm mt-2">Structured debate curriculum — explore all levels</p>
                 </div>
+                <!-- Level switcher — Beginner / Advanced / English Wing (English Wing is a separate content category, not a skill tier) -->
+                <div id="courses-level-switcher" class="flex justify-center gap-2 md:gap-3 mb-8 flex-wrap">
+                    <button data-level="beginner" onclick="switchCourseLevel('beginner')" class="course-level-btn active px-6 py-2.5 rounded-full bg-primary-container text-on-primary font-black text-xs uppercase tracking-widest transition-all">Beginner</button>
+                    <button data-level="advanced" onclick="switchCourseLevel('advanced')" class="course-level-btn px-6 py-2.5 rounded-full glass-card border border-white/10 text-on-surface-variant font-bold text-xs uppercase tracking-widest hover:bg-white/5 transition-all">Advanced</button>
+                    <button data-level="english_wing" onclick="switchCourseLevel('english_wing')" class="course-level-btn px-6 py-2.5 rounded-full glass-card border border-white/10 text-on-surface-variant font-bold text-xs uppercase tracking-widest hover:bg-white/5 transition-all">English Wing</button>
+                </div>
+                <!-- Login prompt (shown when not logged in and somehow on page) -->
+                <div id="courses-login-prompt" class="hidden glass-card rounded-2xl p-8 border border-white/5 text-center mb-8">
+                    <p class="text-on-surface-variant text-sm">Please log in to view courses.</p>
+                    <a href="#" onclick="showPage('page-auth'); return false;" class="inline-block mt-4 px-6 py-3 bg-primary-container text-on-primary font-black rounded-xl text-xs uppercase tracking-widest">Log in</a>
+                </div>
+                <!-- Empty state -->
+                <div id="courses-empty" class="hidden glass-card rounded-2xl p-8 border border-white/5 text-center">
+                    <p class="text-on-surface-variant text-sm">Courses coming soon for this level</p>
+                </div>
+                <!-- Course list — JS injects from Supabase -->
+                <div id="courses-list" class="grid gap-6 md:gap-8"></div>
             </div>
         </div>
 
@@ -2440,7 +2564,8 @@
                 <div class="flex gap-2 md:gap-3 justify-center flex-wrap mb-8">
                     <button onclick="switchAdminTab('submissions')" id="admin-tab-submissions" class="admin-tab active px-4 md:px-6 py-2.5 rounded-full bg-primary-container text-on-primary font-black text-[10px] md:text-xs uppercase tracking-widest">Contact Submissions</button>
                     <button onclick="switchAdminTab('updates')" id="admin-tab-updates" class="admin-tab px-4 md:px-6 py-2.5 rounded-full glass-card border border-white/10 text-on-surface-variant font-bold text-[10px] md:text-xs uppercase tracking-widest hover:bg-white/5">Site Updates</button>
-                    <button onclick="switchAdminTab('courses')" id="admin-tab-courses" class="admin-tab px-4 md:px-6 py-2.5 rounded-full glass-card border border-white/10 text-on-surface-variant font-bold text-[10px] md:text-xs uppercase tracking-widest opacity-60">Courses (coming soon)</button>
+                    <button onclick="switchAdminTab('community')" id="admin-tab-community" class="admin-tab px-4 md:px-6 py-2.5 rounded-full glass-card border border-white/10 text-on-surface-variant font-bold text-[10px] md:text-xs uppercase tracking-widest hover:bg-white/5">Community</button>
+                    <button onclick="switchAdminTab('courses')" id="admin-tab-courses" class="admin-tab px-4 md:px-6 py-2.5 rounded-full glass-card border border-white/10 text-on-surface-variant font-bold text-[10px] md:text-xs uppercase tracking-widest">Courses</button>
                     <button onclick="switchAdminTab('forms')" id="admin-tab-forms" class="admin-tab px-4 md:px-6 py-2.5 rounded-full glass-card border border-white/10 text-on-surface-variant font-bold text-[10px] md:text-xs uppercase tracking-widest opacity-60">Forms (coming soon)</button>
                 </div>
 
@@ -2504,12 +2629,97 @@
                     </div>
                 </div>
 
-                <!-- Placeholder stubs -->
+                <!-- Community manager — admin-editable WhatsApp/Messenger links (same pattern as Site Updates) -->
+                <div id="admin-panel-community" class="admin-panel hidden">
+                    <div class="grid md:grid-cols-2 gap-6 md:gap-8">
+                        <div class="glass-card rounded-2xl p-6 border border-white/10">
+                            <h3 id="community-form-title" class="text-white font-black uppercase tracking-widest text-xs mb-4">Add community link</h3>
+                            <form id="community-form" onsubmit="handleCommunitySubmit(event)" class="flex flex-col gap-3">
+                                <input type="hidden" id="community-edit-id">
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">Label</label>
+                                    <input id="community-label" type="text" required placeholder="e.g., General Group" class="bg-[#181e36] border border-outline-variant/30 p-3 rounded-xl text-white text-sm focus:outline-none focus:border-primary">
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">Platform</label>
+                                    <select id="community-platform" required class="bg-[#181e36] border border-outline-variant/30 p-3 rounded-xl text-white text-sm focus:outline-none focus:border-primary">
+                                        <option value="whatsapp">WhatsApp</option>
+                                        <option value="messenger">Messenger</option>
+                                    </select>
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">Invite URL</label>
+                                    <input id="community-url" type="text" required placeholder="https://chat.whatsapp.com/... or PASTE_*_LINK_HERE_*" class="bg-[#181e36] border border-outline-variant/30 p-3 rounded-xl text-white text-sm focus:outline-none focus:border-primary">
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">Cover image URL (optional)</label>
+                                    <input id="community-cover" type="text" placeholder="https://.../image.jpg — leave empty for icon" class="bg-[#181e36] border border-outline-variant/30 p-3 rounded-xl text-white text-sm focus:outline-none focus:border-primary">
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">Order (0 = first)</label>
+                                    <input id="community-order" type="number" value="0" min="0" step="1" class="bg-[#181e36] border border-outline-variant/30 p-3 rounded-xl text-white text-sm focus:outline-none focus:border-primary">
+                                </div>
+                                <p id="community-error" class="hidden text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg p-2"></p>
+                                <div class="flex gap-2">
+                                    <button type="submit" id="community-submit-btn" class="flex-1 py-3 bg-[#00a6fb] text-white font-black uppercase tracking-widest text-xs rounded-xl">Add</button>
+                                    <button type="button" onclick="resetCommunityForm()" class="px-4 py-3 glass-card border border-white/10 rounded-xl text-xs uppercase tracking-widest font-bold hover:bg-white/5">Cancel</button>
+                                </div>
+                                <p class="text-[10px] text-on-surface-variant/60">Same simple pattern as site_updates.image_url — paste URL, no file upload.</p>
+                            </form>
+                        </div>
+                        <div class="glass-card rounded-2xl p-6 border border-white/10">
+                            <h3 class="text-white font-black uppercase tracking-widest text-xs mb-4">Existing links</h3>
+                            <div id="community-list-admin" class="flex flex-col gap-3 max-h-[520px] overflow-y-auto pr-1">
+                                <p class="text-on-surface-variant text-sm">Loading…</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Courses manager — YouTube-only, leveled, ordered -->
                 <div id="admin-panel-courses" class="admin-panel hidden">
-                    <div class="glass-card rounded-2xl p-12 border border-white/10 text-center border-dashed">
-                        <span class="material-symbols-outlined text-4xl text-on-surface-variant/40">school</span>
-                        <h3 class="text-white font-black uppercase tracking-widest mt-3">Courses (coming soon)</h3>
-                        <p class="text-on-surface-variant text-sm mt-2">This slot will host the Courses CRUD in a later prompt.</p>
+                    <div class="grid md:grid-cols-2 gap-6 md:gap-8">
+                        <div class="glass-card rounded-2xl p-6 border border-white/10">
+                            <h3 id="courses-form-title" class="text-white font-black uppercase tracking-widest text-xs mb-4">Add course</h3>
+                            <form id="courses-form" onsubmit="handleCoursesSubmit(event)" class="flex flex-col gap-3">
+                                <input type="hidden" id="courses-edit-id">
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">Level</label>
+                                    <select id="courses-level" required onchange="suggestCourseOrder()" class="bg-[#181e36] border border-outline-variant/30 p-3 rounded-xl text-white text-sm focus:outline-none focus:border-primary">
+                                        <option value="beginner">Beginner</option>
+                                        <option value="advanced">Advanced</option>
+                                        <option value="english_wing">English Wing</option>
+                                    </select>
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">Title</label>
+                                    <input id="courses-title" type="text" required placeholder="e.g., What is Debate?" class="bg-[#181e36] border border-outline-variant/30 p-3 rounded-xl text-white text-sm focus:outline-none focus:border-primary">
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">YouTube URL</label>
+                                    <input id="courses-url" type="text" required placeholder="https://youtube.com/watch?v=..." class="bg-[#181e36] border border-outline-variant/30 p-3 rounded-xl text-white text-sm focus:outline-none focus:border-primary">
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">Order (lower = higher in list)</label>
+                                    <input id="courses-order" type="number" min="0" step="1" placeholder="0" class="bg-[#181e36] border border-outline-variant/30 p-3 rounded-xl text-white text-sm focus:outline-none focus:border-primary">
+                                    <p class="text-[10px] text-on-surface-variant/60">Auto-suggests next number for the selected level; you can override.</p>
+                                </div>
+                                <p id="courses-error" class="hidden text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg p-2"></p>
+                                <div class="flex gap-2">
+                                    <button type="submit" id="courses-submit-btn" class="flex-1 py-3 bg-[#00a6fb] text-white font-black uppercase tracking-widest text-xs rounded-xl">Add</button>
+                                    <button type="button" onclick="resetCoursesForm()" class="px-4 py-3 glass-card border border-white/10 rounded-xl text-xs uppercase tracking-widest font-bold hover:bg-white/5">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="glass-card rounded-2xl p-6 border border-white/10">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-white font-black uppercase tracking-widest text-xs">Existing courses</h3>
+                                <button onclick="loadCoursesAdmin()" class="text-[10px] uppercase tracking-widest font-bold px-3 py-1.5 rounded-full border border-white/10 hover:bg-white/5">Refresh</button>
+                            </div>
+                            <div id="courses-list-admin" class="flex flex-col gap-6 max-h-[560px] overflow-y-auto pr-1">
+                                <p class="text-on-surface-variant text-sm">Loading…</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div id="admin-panel-forms" class="admin-panel hidden">
@@ -2959,6 +3169,11 @@
         let currentUser = null;
         let currentProfile = null; // {id, full_name, role, level}
 
+        // Community links — now fetched from Supabase community_links (admin-editable)
+        // Hardcoded fallback kept empty; see SQL seed above for initial 6 placeholder rows
+        // To edit: use Admin Panel → Community tab (or Supabase Table Editor)
+        let COMMUNITY_LINKS = [];
+
         // Reusable role gate — use for any section: requireRole('debater' | 'admin')
         function requireRole(role) {
             if (!currentUser || !currentProfile) return false;
@@ -2969,6 +3184,9 @@
         }
         function isAdmin() { return requireRole('admin'); }
         function isDebater() { return requireRole('debater'); }
+        // Simple self-contained helpers for later prompts (admin panel, etc.)
+        function getCurrentUserRole() { return currentProfile?.role || null; }
+        function getCurrentUserLevel() { return currentProfile?.level || null; }
 
         function friendlyAuthError(err) {
             if (!err) return "Something went wrong. Please try again.";
@@ -2982,33 +3200,146 @@
             return "We couldn't complete that. Please check your details and try again.";
         }
 
+        function isStrictDebater() { return currentProfile?.role === 'debater'; }
+        function updateCommunityNav() {
+            // Debater + admin (any logged-in) see Community; visitor sees Contact
+            const isDeb = isDebater();
+            const desktop = document.getElementById('nav-link-contact');
+            const mobile = document.getElementById('mobile-nav-contact');
+            if (desktop) {
+                if (isDeb) {
+                    desktop.textContent = 'Community';
+                    desktop.setAttribute('onclick', "showPage('page-community'); return false;");
+                } else {
+                    desktop.textContent = 'Contact';
+                    desktop.setAttribute('onclick', "showPage('page-contact'); return false;");
+                }
+            }
+            if (mobile) {
+                if (isDeb) {
+                    mobile.textContent = 'Community';
+                    mobile.setAttribute('onclick', "showPage('page-community'); closeMobileMenu(); return false;");
+                } else {
+                    mobile.textContent = 'Contact Base';
+                    mobile.setAttribute('onclick', "showPage('page-contact'); closeMobileMenu(); return false;");
+                }
+            }
+        }
+        async function fetchCommunityLinks() {
+            if (!supabase) return [];
+            const { data, error } = await supabase.from('community_links').select('id,label,platform,url,cover_image_url,order,created_at').order('order', {ascending:true}).order('created_at', {ascending:true});
+            if (error) {
+                console.warn('community_links fetch', error);
+                return [];
+            }
+            return data || [];
+        }
+        async function renderCommunity() {
+            const list = document.getElementById('community-list');
+            if (!list) return;
+            list.innerHTML = '<p class="text-center text-on-surface-variant text-sm py-6">Loading community links…</p>';
+            // Fetch fresh from Supabase (any logged-in user can read)
+            if (supabase && currentUser) {
+                try {
+                    const data = await fetchCommunityLinks();
+                    if (data.length > 0) COMMUNITY_LINKS = data;
+                } catch(e) { console.warn(e); }
+            }
+            // If still empty (visitor not logged in or no rows), show placeholder message but keep static fallback empty
+            if (!COMMUNITY_LINKS || COMMUNITY_LINKS.length === 0) {
+                list.innerHTML = '<p class="text-center text-on-surface-variant text-sm py-6">No community links yet. Admins can add them via Admin Panel → Community.</p>';
+                return;
+            }
+            list.innerHTML = COMMUNITY_LINKS.map(entry => {
+                const isWA = entry.platform === 'whatsapp';
+                const accent = isWA ? 'border-[#25D366]/30 bg-[#25D366]/10 text-[#25D366]' : 'border-[#00B2FF]/30 bg-[#00B2FF]/10 text-[#00B2FF]';
+                const icon = isWA ? 'chat' : 'send';
+                const placeholder = (entry.url||'').includes('PASTE_');
+                const cover = entry.cover_image_url ? `<img src="${escapeHtml(entry.cover_image_url)}" alt="${escapeHtml(entry.label)}" class="w-10 h-10 rounded-full object-cover border ${accent} shrink-0">` : `<div class="w-10 h-10 rounded-full flex items-center justify-center border ${accent} shrink-0"><span class="material-symbols-outlined text-[20px]">${icon}</span></div>`;
+                return `
+                <a href="${placeholder ? '#' : escapeHtml(entry.url)}" ${placeholder ? 'onclick="event.preventDefault(); alert(\'Replace placeholder with real invite link for: \' + entry.label); return false;"' : 'target="_blank" rel="noopener noreferrer"'} class="group glass-card rounded-2xl p-5 md:p-6 border border-white/10 flex items-center justify-between gap-4 hover:border-primary/30 hover:bg-white/[0.04] transition-all">
+                    <div class="flex items-center gap-4">
+                        ${cover}
+                        <div class="text-left">
+                            <h3 class="text-white font-bold text-sm md:text-base leading-tight">${escapeHtml(entry.label)}</h3>
+                            <p class="text-[10px] uppercase tracking-widest font-bold ${isWA ? 'text-[#25D366]/70' : 'text-[#00B2FF]/70'}">${isWA ? 'WhatsApp' : 'Messenger'}${placeholder ? ' • placeholder' : ''}</p>
+                        </div>
+                    </div>
+                    <span class="material-symbols-outlined text-on-surface-variant group-hover:text-white group-hover:translate-x-1 transition-all">arrow_forward</span>
+                </a>`;
+            }).join('');
+        }
         function updateNavVisibility() {
             const loggedIn = !!currentUser;
             const deb = isDebater();
             const admin = isAdmin();
             // Desktop
             const courses = document.getElementById('nav-courses');
-            const adminLink = document.getElementById('nav-admin');
+            const dropdownAdminLink = document.getElementById('dropdown-admin-link');
+            const dropdownAdminSep = document.getElementById('dropdown-admin-separator');
+            const mobileDropdownAdmin = document.getElementById('mobile-dropdown-admin-link');
             const loginBtn = document.getElementById('nav-login-btn');
-            const userMenu = document.getElementById('nav-user-menu');
-            const userNameEl = document.getElementById('nav-user-name');
+            const profileWrap = document.getElementById('nav-profile-wrap');
+            const profileInitial = document.getElementById('nav-profile-initial');
+            const profileName = document.getElementById('nav-profile-name');
             if (courses) courses.classList.toggle('hidden', !deb);
-            if (adminLink) adminLink.classList.toggle('hidden', !admin);
+            if (dropdownAdminLink) dropdownAdminLink.classList.toggle('hidden', !admin);
+            if (dropdownAdminSep) dropdownAdminSep.classList.toggle('hidden', !admin);
+            if (mobileDropdownAdmin) mobileDropdownAdmin.classList.toggle('hidden', !admin);
             if (loginBtn) loginBtn.classList.toggle('hidden', loggedIn);
-            if (userMenu) { userMenu.classList.toggle('hidden', !loggedIn); userMenu.classList.toggle('flex', loggedIn); }
-            if (userNameEl && loggedIn) userNameEl.textContent = currentProfile?.full_name || currentUser?.email?.split('@')[0] || 'Account';
-            // Mobile
+            if (profileWrap) profileWrap.classList.toggle('hidden', !loggedIn);
+            if (loggedIn && profileInitial) {
+                const full = currentProfile?.full_name || currentUser?.email || 'U';
+                const initial = full.trim().charAt(0).toUpperCase();
+                // Use first initial if we have a real name, otherwise person icon
+                if (currentProfile?.full_name && initial.match(/[A-Z]/)) {
+                    profileInitial.textContent = initial;
+                    profileInitial.className = 'font-black text-sm';
+                } else {
+                    profileInitial.textContent = 'person';
+                    profileInitial.className = 'material-symbols-outlined text-[18px]';
+                }
+            }
+            if (loggedIn && profileName) profileName.textContent = currentProfile?.full_name || currentUser?.email || '';
+            if (!loggedIn) closeProfileDropdown();
+            // Mobile (simple: name + Log out directly, no popover)
             const mCourses = document.getElementById('mobile-nav-courses');
-            const mAdmin = document.getElementById('mobile-nav-admin');
             const mLogin = document.getElementById('mobile-nav-login');
             const mUser = document.getElementById('mobile-nav-user');
             const mUserName = document.getElementById('mobile-nav-user-name');
             if (mCourses) mCourses.classList.toggle('hidden', !deb);
-            if (mAdmin) mAdmin.classList.toggle('hidden', !admin);
             if (mLogin) mLogin.classList.toggle('hidden', loggedIn);
             if (mUser) { mUser.classList.toggle('hidden', !loggedIn); mUser.classList.toggle('flex', loggedIn); }
             if (mUserName && loggedIn) mUserName.textContent = currentProfile?.full_name || currentUser?.email || '';
+            updateCommunityNav();
+            renderCommunity();
         }
+        function toggleProfileDropdown(e) {
+            e.stopPropagation();
+            const dd = document.getElementById('nav-profile-dropdown');
+            const btn = document.getElementById('nav-profile-btn');
+            if (!dd || !btn) return;
+            const isHidden = dd.classList.contains('hidden');
+            if (isHidden) {
+                dd.classList.remove('hidden');
+                btn.setAttribute('aria-expanded', 'true');
+            } else {
+                closeProfileDropdown();
+            }
+        }
+        function closeProfileDropdown() {
+            const dd = document.getElementById('nav-profile-dropdown');
+            const btn = document.getElementById('nav-profile-btn');
+            if (dd) dd.classList.add('hidden');
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+        }
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e){
+            const wrap = document.getElementById('nav-profile-wrap');
+            const dd = document.getElementById('nav-profile-dropdown');
+            if (!wrap || !dd || dd.classList.contains('hidden')) return;
+            if (!wrap.contains(e.target)) closeProfileDropdown();
+        });
 
         async function fetchProfile() {
             if (!currentUser || !supabase) return null;
@@ -3156,6 +3487,18 @@
             if (id === 'page-courses' && !isDebater()) {
                 handleCoursesNav(); return;
             }
+            // Gate community — debater + admin (any logged-in) see it; visitor redirect to Login
+            if (id === 'page-community' && !isDebater()) {
+                if (!currentUser) {
+                    showPage('page-auth');
+                    switchAuthMode('login');
+                    const err = document.getElementById('auth-error');
+                    if (err) { err.textContent = "Please log in to view the Community."; err.classList.remove('hidden'); }
+                } else {
+                    showPage('page-contact');
+                }
+                return;
+            }
             // Call original and auto-load submissions when admin panel first opens (fix stuck "Loading…")
             if (typeof _origShowPage === 'function') {
                 const ret = _origShowPage(id, tab);
@@ -3194,6 +3537,8 @@
             if (panel) panel.classList.remove('hidden');
             if (which === 'submissions') loadSubmissions();
             if (which === 'updates') loadAdminUpdates();
+            if (which === 'community') loadCommunityAdmin();
+            if (which === 'courses') loadCoursesAdmin();
         }
 
         async function loadSubmissions() {
@@ -3320,6 +3665,236 @@
             await loadAdminUpdates(); await loadHomeUpdates();
         }
 
+        // Community links CRUD — admin-only, same pattern as site_updates (plain URL, no Storage)
+        async function loadCommunityAdmin(){
+            const list = document.getElementById('community-list-admin');
+            if (!list || !supabase) return;
+            list.innerHTML = '<p class="text-on-surface-variant text-sm">Loading…</p>';
+            const { data, error } = await supabase.from('community_links').select('*').order('order', {ascending:true}).order('created_at', {ascending:true});
+            if (error) { list.innerHTML = `<p class="text-red-400 text-sm">Error: ${escapeHtml(error.message)}</p>`; return; }
+            if (!data || data.length===0) { list.innerHTML = '<p class="text-on-surface-variant text-sm">No links yet.</p>'; return; }
+            list.innerHTML = data.map(entry => `
+                <div class="glass-card rounded-xl p-4 border border-white/5 flex flex-col gap-2">
+                    <div class="flex items-center gap-3">
+                        ${entry.cover_image_url ? `<img src="${escapeHtml(entry.cover_image_url)}" alt="${escapeHtml(entry.label)}" class="w-8 h-8 rounded-full object-cover">` : `<span class="material-symbols-outlined text-sm ${entry.platform==='whatsapp'?'text-[#25D366]':'text-[#00B2FF]'}">${entry.platform==='whatsapp'?'chat':'send'}</span>`}
+                        <div class="flex-1">
+                            <h4 class="text-white font-bold text-sm">${escapeHtml(entry.label)}</h4>
+                            <p class="text-[10px] uppercase tracking-widest ${entry.platform==='whatsapp'?'text-[#25D366]/70':'text-[#00B2FF]/70'}">${escapeHtml(entry.platform)}</p>
+                        </div>
+                        <span class="text-[10px] text-on-surface-variant/60">#${entry.order}</span>
+                    </div>
+                    <a href="${escapeHtml(entry.url)}" target="_blank" class="text-[10px] text-primary truncate">${escapeHtml(entry.url)}</a>
+                    ${entry.cover_image_url ? `<p class="text-[10px] text-on-surface-variant/60 truncate">Cover: ${escapeHtml(entry.cover_image_url)}</p>` : ''}
+                    <div class="flex gap-2 mt-2">
+                        <button onclick="editCommunity('${entry.id}')" class="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-bold uppercase tracking-widest">Edit</button>
+                        <button onclick="deleteCommunity('${entry.id}')" class="flex-1 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-xs font-bold uppercase tracking-widest">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        async function handleCommunitySubmit(e){
+            e.preventDefault();
+            const id = document.getElementById('community-edit-id').value.trim();
+            const label = document.getElementById('community-label').value.trim();
+            const platform = document.getElementById('community-platform').value;
+            const url = document.getElementById('community-url').value.trim();
+            const cover_image_url = document.getElementById('community-cover').value.trim() || null;
+            const orderVal = parseInt(document.getElementById('community-order').value, 10);
+            const order = isNaN(orderVal) ? 0 : orderVal;
+            const errEl = document.getElementById('community-error');
+            errEl.classList.add('hidden');
+            if (!label || !url) { errEl.textContent = "Label and URL are required."; errEl.classList.remove('hidden'); return; }
+            if (!['whatsapp','messenger'].includes(platform)) { errEl.textContent = "Platform must be whatsapp or messenger."; errEl.classList.remove('hidden'); return; }
+            const btn = document.getElementById('community-submit-btn');
+            btn.disabled = true; btn.textContent = id ? 'Updating…' : 'Adding…';
+            try {
+                // Allow editing any subset: build payload with provided fields (label, platform, url, cover, order)
+                const payload = { label, platform, url, cover_image_url, order };
+                let error;
+                if (id) {
+                    const res = await supabase.from('community_links').update(payload).eq('id', id);
+                    error = res.error;
+                } else {
+                    const res = await supabase.from('community_links').insert(payload);
+                    error = res.error;
+                }
+                if (error) throw error;
+                resetCommunityForm();
+                await loadCommunityAdmin();
+                await renderCommunity(); // refresh public page
+            } catch(err){
+                errEl.textContent = friendlyAuthError(err) + (err.message ? " — " + err.message : "");
+                errEl.classList.remove('hidden');
+            } finally { btn.disabled=false; btn.textContent = document.getElementById('community-edit-id').value ? 'Update' : 'Add'; }
+        }
+        function resetCommunityForm(){
+            document.getElementById('community-edit-id').value='';
+            document.getElementById('community-label').value='';
+            document.getElementById('community-platform').value='whatsapp';
+            document.getElementById('community-url').value='';
+            document.getElementById('community-cover').value='';
+            document.getElementById('community-order').value='0';
+            document.getElementById('community-form-title').textContent='Add community link';
+            document.getElementById('community-submit-btn').textContent='Add';
+            document.getElementById('community-error').classList.add('hidden');
+        }
+        async function editCommunity(id){
+            if (!supabase) return;
+            const { data, error } = await supabase.from('community_links').select('*').eq('id', id).single();
+            if (error) return alert(friendlyAuthError(error));
+            document.getElementById('community-edit-id').value = data.id;
+            document.getElementById('community-label').value = data.label;
+            document.getElementById('community-platform').value = data.platform;
+            document.getElementById('community-url').value = data.url;
+            document.getElementById('community-cover').value = data.cover_image_url || '';
+            document.getElementById('community-order').value = data.order || 0;
+            document.getElementById('community-form-title').textContent='Edit link';
+            document.getElementById('community-submit-btn').textContent='Update';
+            document.getElementById('community-form').scrollIntoView({behavior:'smooth', block:'center'});
+        }
+        async function deleteCommunity(id){
+            if (!confirm('Delete this community link?')) return;
+            const { error } = await supabase.from('community_links').delete().eq('id', id);
+            if (error) return alert(friendlyAuthError(error) + "\n" + error.message);
+            await loadCommunityAdmin();
+            await renderCommunity();
+        }
+
+        // Courses admin CRUD — YouTube-only, leveled, ordered (same pattern as Community/Site Updates)
+        let coursesAdminCache = [];
+        function getNextCourseOrderForLevel(level) {
+            const lvl = (level || document.getElementById('courses-level')?.value || 'beginner').toLowerCase();
+            const max = coursesAdminCache.filter(c => (c.level||'').toLowerCase() === lvl).reduce((m,c) => Math.max(m, typeof c.order === 'number' ? c.order : parseInt(c.order,10) || 0), -1);
+            return max + 1;
+        }
+        function suggestCourseOrder() {
+            // Only auto-suggest when adding (no edit id) and order field is empty or user hasn't manually set it
+            const editId = document.getElementById('courses-edit-id')?.value.trim();
+            if (editId) return;
+            const orderInput = document.getElementById('courses-order');
+            if (!orderInput) return;
+            // If field is empty or 0 and not focused, suggest next
+            if (orderInput.value === '' || orderInput.value === '0') {
+                orderInput.value = getNextCourseOrderForLevel();
+            } else {
+                // Still update placeholder hint
+                orderInput.placeholder = String(getNextCourseOrderForLevel());
+            }
+        }
+        async function loadCoursesAdmin(){
+            const list = document.getElementById('courses-list-admin');
+            if (!list || !supabase) return;
+            list.innerHTML = '<p class="text-on-surface-variant text-sm">Loading…</p>';
+            const { data, error } = await supabase.from('courses').select('id,level,title,description,video_type,video_url,"order",created_at').order('"order"', {ascending:true}).order('created_at', {ascending:true});
+            if (error) { list.innerHTML = `<p class="text-red-400 text-sm">Error: ${escapeHtml(error.message)}</p>`; return; }
+            coursesAdminCache = data || [];
+            if (!data || data.length===0) {
+                list.innerHTML = '<p class="text-on-surface-variant text-sm">No courses yet. Add one on the left.</p>';
+                suggestCourseOrder();
+                return;
+            }
+            const levelOrder = ['beginner','advanced','english_wing'];
+            const labels = { beginner: 'Beginner', advanced: 'Advanced', english_wing: 'English Wing' };
+            // Group and sort already sorted by order+created_at, but re-sort per group to be safe
+            list.innerHTML = levelOrder.map(lvl => {
+                const group = data.filter(c => (c.level||'').toLowerCase() === lvl).sort((a,b) => (a.order||0)-(b.order||0) || new Date(a.created_at)-new Date(b.created_at));
+                if (group.length===0) {
+                    return `<div class="glass-card rounded-xl p-4 border border-white/5 border-dashed"><h4 class="text-white/60 font-bold text-xs uppercase tracking-widest">${labels[lvl]} — 0 courses</h4><p class="text-on-surface-variant/60 text-xs mt-1">Courses coming soon for this level</p></div>`;
+                }
+                const rows = group.map(c => `
+                    <div class="glass-card rounded-xl p-4 border border-white/5 flex flex-col gap-2">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="text-[10px] font-bold px-2 py-1 rounded-full bg-white/5 border border-white/10 text-on-surface-variant">#${c.order ?? 0}</span>
+                                    <span class="text-[10px] uppercase tracking-widest font-bold text-primary/70">${labels[lvl] || escapeHtml(c.level)}</span>
+                                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-[#FF0000]/10 border border-[#FF0000]/20 text-[#FF5A5A]">YouTube</span>
+                                </div>
+                                <h4 class="text-white font-bold text-sm mt-2 truncate" title="${escapeHtml(c.title)}">${escapeHtml(c.title)}</h4>
+                                <a href="${escapeHtml(c.video_url)}" target="_blank" class="text-[10px] text-primary truncate block mt-1 hover:underline">${escapeHtml(c.video_url)}</a>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 mt-2">
+                            <button onclick="editCourse('${c.id}')" class="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-bold uppercase tracking-widest">Edit</button>
+                            <button onclick="deleteCourse('${c.id}')" class="flex-1 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-xs font-bold uppercase tracking-widest">Delete</button>
+                        </div>
+                    </div>
+                `).join('');
+                return `<div><h4 class="text-white font-black uppercase tracking-widest text-xs mb-3">${labels[lvl]} <span class="text-on-surface-variant/60 font-normal normal-case tracking-normal">— ${group.length} • sorted by order</span></h4><div class="flex flex-col gap-3">${rows}</div></div>`;
+            }).join('<div class="h-px bg-white/5 my-2"></div>');
+            suggestCourseOrder();
+        }
+        async function handleCoursesSubmit(e){
+            e.preventDefault();
+            const id = document.getElementById('courses-edit-id').value.trim();
+            const level = document.getElementById('courses-level').value;
+            const title = document.getElementById('courses-title').value.trim();
+            const video_url = document.getElementById('courses-url').value.trim();
+            const orderVal = parseInt(document.getElementById('courses-order').value, 10);
+            const order = isNaN(orderVal) ? getNextCourseOrderForLevel(level) : orderVal;
+            const errEl = document.getElementById('courses-error');
+            errEl.classList.add('hidden');
+            if (!['beginner','advanced','english_wing'].includes(level)) { errEl.textContent = "Level must be Beginner, Advanced, or English Wing."; errEl.classList.remove('hidden'); return; }
+            if (!title) { errEl.textContent = "Title is required."; errEl.classList.remove('hidden'); return; }
+            if (!video_url) { errEl.textContent = "YouTube URL is required."; errEl.classList.remove('hidden'); return; }
+            if (!supabase) { errEl.textContent = "Supabase not configured."; errEl.classList.remove('hidden'); return; }
+            const btn = document.getElementById('courses-submit-btn');
+            btn.disabled = true; btn.textContent = id ? 'Updating…' : 'Adding…';
+            try {
+                // Always YouTube via this form; description omitted (nullable)
+                const payload = { level, title, video_type: 'youtube', video_url, order };
+                let error;
+                if (id) {
+                    const res = await supabase.from('courses').update(payload).eq('id', id);
+                    error = res.error;
+                } else {
+                    // insert — description will be null
+                    const res = await supabase.from('courses').insert(payload);
+                    error = res.error;
+                }
+                if (error) throw error;
+                resetCoursesForm();
+                await loadCoursesAdmin();
+                // refresh public cache if needed
+                if (currentUser) loadCourses();
+            } catch(err){
+                errEl.textContent = friendlyAuthError(err) + (err.message ? " — " + err.message : "");
+                errEl.classList.remove('hidden');
+            } finally { btn.disabled=false; btn.textContent = document.getElementById('courses-edit-id').value ? 'Update' : 'Add'; }
+        }
+        function resetCoursesForm(){
+            document.getElementById('courses-edit-id').value='';
+            document.getElementById('courses-level').value='beginner';
+            document.getElementById('courses-title').value='';
+            document.getElementById('courses-url').value='';
+            document.getElementById('courses-order').value='';
+            document.getElementById('courses-order').placeholder='0';
+            document.getElementById('courses-form-title').textContent='Add course';
+            document.getElementById('courses-submit-btn').textContent='Add';
+            document.getElementById('courses-error').classList.add('hidden');
+            suggestCourseOrder();
+        }
+        async function editCourse(id){
+            if (!supabase) return;
+            const { data, error } = await supabase.from('courses').select('id,level,title,video_type,video_url,"order"').eq('id', id).single();
+            if (error) return alert(friendlyAuthError(error));
+            document.getElementById('courses-edit-id').value = data.id;
+            document.getElementById('courses-level').value = (data.level||'beginner').toLowerCase();
+            document.getElementById('courses-title').value = data.title || '';
+            document.getElementById('courses-url').value = data.video_url || '';
+            document.getElementById('courses-order').value = (data.order ?? 0);
+            document.getElementById('courses-form-title').textContent='Edit course';
+            document.getElementById('courses-submit-btn').textContent='Update';
+            document.getElementById('courses-form').scrollIntoView({behavior:'smooth', block:'center'});
+        }
+        async function deleteCourse(id){
+            if (!confirm('Delete this course?')) return;
+            const { error } = await supabase.from('courses').delete().eq('id', id);
+            if (error) return alert(friendlyAuthError(error) + "\n" + error.message);
+            await loadCoursesAdmin();
+            if (currentUser) loadCourses();
+        }
+
         // Init auth state on load
         window.addEventListener('DOMContentLoaded', () => {
             checkSession();
@@ -3345,7 +3920,190 @@
         window.resetUpdatesForm = resetUpdatesForm;
         window.editUpdate = editUpdate;
         window.deleteUpdate = deleteUpdate;
+        window.loadCommunityAdmin = loadCommunityAdmin;
+        window.handleCommunitySubmit = handleCommunitySubmit;
+        window.resetCommunityForm = resetCommunityForm;
+        window.editCommunity = editCommunity;
+        window.deleteCommunity = deleteCommunity;
+        window.loadCoursesAdmin = loadCoursesAdmin;
+        window.handleCoursesSubmit = handleCoursesSubmit;
+        window.resetCoursesForm = resetCoursesForm;
+        window.editCourse = editCourse;
+        window.deleteCourse = deleteCourse;
+        window.suggestCourseOrder = suggestCourseOrder;
+        window.getNextCourseOrderForLevel = getNextCourseOrderForLevel;
         window.requireRole = requireRole;
+        window.getCurrentUserRole = getCurrentUserRole;
+        window.getCurrentUserLevel = getCurrentUserLevel;
+
+        // ============================================================
+        // COURSES — leveled, gated, fetched from Supabase (Part 2)
+        // Reuses existing supabase client; no second instance
+        // ============================================================
+        let currentCourseLevel = 'beginner';
+        let coursesCache = []; // all fetched courses
+
+        function updateCoursesSwitcherVisibility() {
+            const switcher = document.getElementById('courses-level-switcher');
+            if (!switcher) return;
+            // NOTE: Per-debater level restriction intentionally disabled — any logged-in user (debater OR admin)
+            // can freely switch between all three tabs (Beginner / Advanced / English Wing).
+            // profiles.level column is kept for future use; re-enable gating here if needed.
+            switcher.querySelectorAll('.course-level-btn').forEach(btn => btn.classList.remove('hidden'));
+            // Do NOT force currentCourseLevel to profile level — user keeps their selected tab.
+            // Update active styling
+            switcher.querySelectorAll('.course-level-btn').forEach(btn => {
+                const isActive = btn.getAttribute('data-level') === currentCourseLevel;
+                if (isActive) {
+                    btn.classList.add('active','bg-primary-container','text-on-primary');
+                    btn.classList.remove('glass-card','border','border-white/10','text-on-surface-variant');
+                } else {
+                    btn.classList.remove('active','bg-primary-container','text-on-primary');
+                    btn.classList.add('glass-card','border','border-white/10','text-on-surface-variant');
+                }
+            });
+        }
+
+        function switchCourseLevel(level) {
+            currentCourseLevel = level;
+            // Update button styles
+            document.querySelectorAll('.course-level-btn').forEach(btn => {
+                const isActive = btn.getAttribute('data-level') === level;
+                if (isActive) {
+                    btn.classList.add('active','bg-primary-container','text-on-primary');
+                    btn.classList.remove('glass-card','border','border-white/10','text-on-surface-variant');
+                } else {
+                    btn.classList.remove('active','bg-primary-container','text-on-primary');
+                    btn.classList.add('glass-card','border','border-white/10','text-on-surface-variant');
+                }
+            });
+            renderCourses();
+        }
+
+        function parseYouTubeId(url) {
+            if (!url) return null;
+            // Handle youtu.be/xxx, youtube.com/watch?v=xxx, youtube.com/embed/xxx
+            try {
+                const u = new URL(url);
+                if (u.hostname.includes('youtu.be')) return u.pathname.slice(1).split('?')[0];
+                if (u.searchParams.get('v')) return u.searchParams.get('v');
+                const parts = u.pathname.split('/');
+                const idx = parts.indexOf('embed');
+                if (idx !== -1 && parts[idx+1]) return parts[idx+1];
+                // Fallback: if url is just ID
+                if (/^[A-Za-z0-9_-]{11}$/.test(url.trim())) return url.trim();
+                return null;
+            } catch {
+                if (/^[A-Za-z0-9_-]{11}$/.test(url.trim())) return url.trim();
+                return null;
+            }
+        }
+
+        async function loadCourses() {
+            const list = document.getElementById('courses-list');
+            const empty = document.getElementById('courses-empty');
+            const prompt = document.getElementById('courses-login-prompt');
+            if (!list) return;
+            // Gate: must be logged in
+            if (!currentUser) {
+                if (prompt) prompt.classList.remove('hidden');
+                if (empty) empty.classList.add('hidden');
+                list.innerHTML = '';
+                return;
+            }
+            if (prompt) prompt.classList.add('hidden');
+            list.innerHTML = '<p class="text-center text-on-surface-variant text-sm py-8">Loading courses…</p>';
+            if (empty) empty.classList.add('hidden');
+            if (!supabase) {
+                list.innerHTML = '<p class="text-center text-red-400 text-sm">Supabase not configured.</p>';
+                return;
+            }
+            const { data, error } = await supabase.from('courses').select('id,level,title,description,video_type,video_url,"order",created_at').order('"order"', {ascending:true}).order('created_at', {ascending:true});
+            if (error) {
+                console.warn('courses load', error);
+                list.innerHTML = `<p class="text-center text-red-400 text-sm">Could not load courses: ${error.message}</p>`;
+                return;
+            }
+            coursesCache = data || [];
+            // Ensure current level is valid for user
+            updateCoursesSwitcherVisibility();
+            renderCourses();
+        }
+
+        function renderCourses() {
+            const list = document.getElementById('courses-list');
+            const empty = document.getElementById('courses-empty');
+            if (!list) return;
+            // Filter by current level
+            const filtered = coursesCache.filter(c => (c.level||'').toLowerCase() === currentCourseLevel);
+            if (filtered.length === 0) {
+                list.innerHTML = '';
+                if (empty) empty.classList.remove('hidden');
+                return;
+            }
+            if (empty) empty.classList.add('hidden');
+            list.innerHTML = filtered.map(c => {
+                const isYT = (c.video_type||'').toLowerCase() === 'youtube';
+                const ytId = isYT ? parseYouTubeId(c.video_url) : null;
+                const videoHtml = isYT && ytId
+                    ? `<div class="aspect-video w-full bg-black rounded-xl overflow-hidden"><iframe class="w-full h-full" src="https://www.youtube.com/embed/${ytId}" title="${escapeHtml(c.title)}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>`
+                    : isYT
+                        ? `<a href="${escapeHtml(c.video_url)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-2 bg-primary-container text-on-primary rounded-full text-xs font-bold uppercase tracking-widest">Watch on YouTube →</a>`
+                        : `<a href="${escapeHtml(c.video_url)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-2 bg-primary-container text-on-primary rounded-full text-xs font-bold uppercase tracking-widest"><span class="material-symbols-outlined text-sm">open_in_new</span> Watch on Drive</a>`;
+                const levelLabels = { beginner: 'Beginner', advanced: 'Advanced', english_wing: 'English Wing' };
+                const displayLevel = levelLabels[(c.level||'').toLowerCase()] || c.level;
+                const descHtml = (c.description && c.description.trim()) ? `<p class="text-on-surface-variant text-sm leading-relaxed mt-2">${escapeHtml(c.description)}</p>` : '';
+                return `
+                <div class="glass-card rounded-2xl p-6 md:p-8 border border-white/10 flex flex-col gap-4">
+                    <div>
+                        <span class="inline-block px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">${escapeHtml(displayLevel)}</span>
+                        <h3 class="text-white font-black text-lg md:text-xl mt-3 leading-tight">${escapeHtml(c.title)}</h3>
+                        ${descHtml}
+                    </div>
+                    ${videoHtml}
+                </div>`;
+            }).join('');
+        }
+
+        // Hook into existing page show and session flow
+        // When Courses page is shown, ensure correct level and load
+        const _origShowPageCourses = window.showPage;
+        // Already overridden once for admin gating; wrap again to add courses loading
+        // Instead, patch the existing override by adding logic after it (we add here)
+        // We will monkey-patch again: if page-courses, update switcher and load
+        (function(){
+            const prev = window.showPage;
+            window.showPage = function(id, tab){
+                const ret = prev(id, tab);
+                if (id === 'page-courses') {
+                    // Ensure user is logged in already handled by prev (redirects if not debater)
+                    // Update switcher visibility and load
+                    setTimeout(() => {
+                        updateCoursesSwitcherVisibility();
+                        loadCourses();
+                    }, 80);
+                }
+                return ret;
+            };
+        })();
+
+        // Also update switcher when profile loads (role/level changes)
+        const _origUpdateNav = window.updateNavVisibility;
+        if (typeof _origUpdateNav === 'function') {
+            window.updateNavVisibility = function(){
+                _origUpdateNav();
+                updateCoursesSwitcherVisibility();
+                // If already on courses page, re-render
+                const coursesPage = document.getElementById('page-courses');
+                if (coursesPage && !coursesPage.classList.contains('hidden')) {
+                    renderCourses();
+                }
+            };
+        }
+
+        window.switchCourseLevel = switchCourseLevel;
+        window.loadCourses = loadCourses;
+
 
         // Viewport Intersection Observer for scroll animations (Refactored to globally scoped listener)
         const revealObserver = new IntersectionObserver((entries) => {
@@ -3374,4 +4132,3 @@
 
 
 </body></html>
-<!-- trigger deploy -->
