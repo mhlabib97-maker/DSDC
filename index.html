@@ -2509,7 +2509,6 @@
                         <p id="auth-success" class="hidden text-xs text-green-400 bg-green-500/10 border border-green-500/20 rounded-lg p-3"></p>
                         <button id="auth-submit" type="submit" class="mt-2 w-full py-3.5 bg-[#00a6fb] hover:bg-[#00a6fb]/90 text-white font-black uppercase tracking-widest text-xs rounded-xl shadow-lg transition-all active:scale-95">Log in</button>
                     </form>
-                    <p class="text-center text-[10px] text-on-surface-variant mt-4">Public signup creates a <span class="text-white font-bold">debater</span> account. Admin is granted manually in Supabase.</p>
                 </div>
                 <!-- Logged-in state -->
                 <div id="auth-loggedin" class="hidden glass-card rounded-2xl p-6 border border-white/10 text-center mt-6">
@@ -2793,6 +2792,9 @@
             </div>
         </div>
     </footer>
+
+    <!-- Toast container — glassmorphism, matches site style -->
+    <div id="toast-container" class="fixed top-20 md:top-24 right-4 md:right-6 z-[200] flex flex-col gap-3 pointer-events-none"></div>
 
     <!-- Scripts Block -->
     <script>
@@ -3165,7 +3167,15 @@
         // ============================================================
         const SUPABASE_URL = "https://cqfmmxepnuathgxkvwfl.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_m2zuX_OrINLpK2lViTTdyQ_1MwodSq3";
-        const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+        // Session persistence must stay enabled (Supabase defaults) so users stay logged in
+        // across refreshes/revisits. Never set persistSession or autoRefreshToken to false here.
+        const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                persistSession: true,
+                autoRefreshToken: true,
+                detectSessionInUrl: true
+            }
+        }) : null;
         let currentUser = null;
         let currentProfile = null; // {id, full_name, role, level}
 
@@ -3198,6 +3208,21 @@
             if (msg.includes("email rate limit") || msg.includes("over_email_send_rate_limit")) return "Too many attempts. Please wait a moment and try again.";
             // Fallback: generic, non-technical
             return "We couldn't complete that. Please check your details and try again.";
+        }
+
+        function showToast(message, type='success') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const isSuccess = type === 'success';
+            const toast = document.createElement('div');
+            toast.className = `pointer-events-auto glass-card rounded-xl px-5 py-3.5 border flex items-center gap-3 shadow-2xl backdrop-blur-xl transition-all duration-300 translate-x-2 opacity-0 ${isSuccess ? 'border-primary/20 bg-primary/10 text-white' : 'border-red-500/20 bg-red-500/10 text-red-300'}`;
+            toast.innerHTML = `<span class="material-symbols-outlined text-[18px] ${isSuccess ? 'text-primary' : 'text-red-400'}">${isSuccess ? 'check_circle' : 'error'}</span><span class="text-xs md:text-sm font-bold tracking-wide">${escapeHtml(message)}</span>`;
+            container.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.remove('translate-x-2','opacity-0'));
+            setTimeout(() => {
+                toast.classList.add('opacity-0','translate-x-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 2600);
         }
 
         function isStrictDebater() { return currentProfile?.role === 'debater'; }
@@ -3354,15 +3379,23 @@
 
         async function checkSession() {
             if (!supabase) return;
-            const { data: { session } } = await supabase.auth.getSession();
-            currentUser = session?.user || null;
-            if (currentUser) {
-                await fetchProfile();
-            } else {
-                currentProfile = null;
+            try {
+                // Restore persisted session from browser storage (persistSession: true)
+                const { data: { session } } = await supabase.auth.getSession();
+                currentUser = session?.user || null;
+                if (currentUser) {
+                    await fetchProfile();
+                } else {
+                    currentProfile = null;
+                }
+            } catch (e) {
+                console.warn('session restore failed', e);
+            } finally {
+                // Always re-apply logged-in UI state if a valid session exists —
+                // never force the user to log in again just because of a refresh.
+                updateNavVisibility();
+                updateAuthPageUI();
             }
-            updateNavVisibility();
-            updateAuthPageUI();
             loadHomeUpdates(); // always load feed (public)
         }
 
@@ -3427,16 +3460,23 @@
                         options: { data: { full_name: fullname } }
                     });
                     if (error) throw error;
-                    // Trigger will create profile; if email confirmation required, inform user
-                    if (data.user && !data.session) {
-                        okEl.textContent = "Account created! Please check your email to confirm, then log in.";
+                    // Email confirmation is disabled — signUp now returns an active session directly.
+                    // Check data.session (not just data.user) to confirm they are actually logged in.
+                    if (data.session) {
+                        // Reuse existing post-login session handling (same as signInWithPassword)
+                        currentUser = data.session.user || data.user;
+                        await fetchProfile();
+                        updateNavVisibility();
+                        updateAuthPageUI();
+                        showToast(`Welcome, ${currentProfile?.full_name || fullname || 'signed in!'}!`, 'success');
+                        okEl.textContent = "Welcome, signed in!";
                         okEl.classList.remove('hidden');
+                        setTimeout(()=> showHome(), 600);
                     } else {
-                        // Auto-logged in
-                        await checkSession();
-                        okEl.textContent = "Account created and logged in!";
+                        // Edge case: no session (e.g. confirmation re-enabled) — don't pretend logged in
+                        okEl.textContent = "Account created! Please log in to continue.";
                         okEl.classList.remove('hidden');
-                        setTimeout(()=> showHome(), 800);
+                        switchAuthMode('login');
                     }
                 } else {
                     const { data, error } = await supabase.auth.signInWithPassword({ email, password: pw });
@@ -3456,9 +3496,25 @@
             }
         }
         async function handleLogout() {
-            if (supabase) await supabase.auth.signOut();
-            currentUser = null; currentProfile = null;
-            updateNavVisibility(); updateAuthPageUI();
+            // Always wait for signOut to finish before touching UI state
+            if (supabase) {
+                try {
+                    await supabase.auth.signOut();
+                } catch (e) {
+                    // Network hiccup shouldn't trap the user in a logged-in UI —
+                    // local state is cleared below either way.
+                    console.warn('signOut failed', e);
+                }
+            }
+            // Reset all logged-in state
+            currentUser = null;
+            currentProfile = null;
+            closeProfileDropdown();
+            closeMobileMenu();
+            // Nav back to "Log in", profile icon hidden, Courses/Admin/Community links hidden
+            updateNavVisibility();
+            updateAuthPageUI();
+            // Leave whatever gated page was open (Courses/Admin/Community) and go home
             showHome();
         }
         function handleCoursesNav() {
@@ -3897,11 +3953,15 @@
 
         // Init auth state on load
         window.addEventListener('DOMContentLoaded', () => {
-            checkSession();
+            checkSession(); // restores persisted session (profile icon, gated nav) on every visit
             // Listen for auth changes (login/logout in another tab, etc.)
             if (supabase) supabase.auth.onAuthStateChange(async (_event, session)=>{
-                currentUser = session?.user || null;
-                if (currentUser) await fetchProfile(); else currentProfile=null;
+                try {
+                    currentUser = session?.user || null;
+                    if (currentUser) await fetchProfile(); else currentProfile = null;
+                } catch (e) {
+                    console.warn('auth state change profile fetch failed', e);
+                }
                 updateNavVisibility(); updateAuthPageUI();
                 if (currentUser) { loadHomeUpdates(); }
             });
