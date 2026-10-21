@@ -18,6 +18,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet">
+    <!-- Bangla font fallback — used by the Past Events titles (Hanken Grotesk has no Bangla glyphs) -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;700;900&amp;display=swap" rel="stylesheet">
     
     <script id="tailwind-config">
         tailwind.config = {
@@ -203,6 +205,43 @@
                 min-height: 52px;
             }
             #hero .hero-cta a:last-child { line-height: 1.2; }
+
+            /* A1 — the JOIN DSDC <button> carries a fixed inline width
+               (~158px) that only the rule above corrected for the Legacy
+               <a>; give the button the same full-column width/height. */
+            #hero .hero-cta button {
+                width: 100% !important;
+                height: auto !important;
+                min-height: 52px;
+            }
+
+            /* A2 — split subpage titles (white part + cyan part): keep the
+               two parts on ONE line on mobile. The cyan span is `block`
+               until md:inline at 768px, which stacked the halves
+               (MODERA/TORS, FOUND/ERS). Sized by the longest title. */
+            #page-ec h1 span,
+            #page-about h1 span,
+            #page-moderators h1 span,
+            #page-founders h1 span,
+            #page-school-panel h1 span,
+            #page-events h1 span {
+                display: inline !important;
+            }
+            #page-ec h1,
+            #page-about h1,
+            #page-moderators h1,
+            #page-founders h1,
+            #page-school-panel h1,
+            #page-events h1 {
+                white-space: nowrap !important;
+                font-size: clamp(21px, 7vw, 30px) !important;
+            }
+            /* Contact title (single line at 39px, no cyan half) — only
+               shrinks below ~370px where it could otherwise wrap. */
+            #page-contact h2 {
+                white-space: nowrap !important;
+                font-size: clamp(28px, 10.5vw, 39px) !important;
+            }
         }
 
         /* Mobile homepage headline fixes (max-width 767px only; desktop untouched) — match 6TH DSDC NATIONALS (text-3xl / sm:text-5xl) */
@@ -219,6 +258,16 @@
         @media (min-width: 640px) and (max-width: 767px) {
             #about h2 { font-size: 48px !important; }
             #join-league h2 { font-size: 48px !important; }
+            /* A2 — 640–767px: split titles stay near their sm size (48px)
+               and on one line (verified to fit the longest title). */
+            #page-ec h1,
+            #page-about h1,
+            #page-moderators h1,
+            #page-founders h1,
+            #page-school-panel h1,
+            #page-events h1 {
+                font-size: clamp(44px, 7.4vw, 48px) !important;
+            }
         }
 
         .glow-title-fix {
@@ -275,6 +324,17 @@
             opacity: 1;
             transform: translateY(0);
         }
+        /* Leaders dropdown — also opens when LEADERS is clicked (it never navigates) */
+        .nav-links .group.dd-open .dropdown {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: translateX(-50%) translateY(0) scale(1);
+        }
+        .nav-links .group.dd-open .dropdown a {
+            opacity: 1;
+            transform: translateY(0);
+        }
         .dropdown a {
             display: block;
             padding: 14px 20px;
@@ -298,6 +358,155 @@
 
         .image-zoom {
             transition: transform 0.6s ease;
+        }
+
+        /* Past Events — Bangla titles need a Bangla-capable font fallback */
+        .past-event-title,
+        .past-event-badge {
+            font-family: 'Hanken Grotesk', 'Noto Sans Bengali', sans-serif;
+            overflow-wrap: anywhere;
+        }
+
+        /* Facebook icon injected onto the current EC (EC-XI) member photocards */
+        .ec-fb-icon {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            z-index: 10;
+            width: 32px;
+            height: 32px;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(6, 13, 36, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            color: #94ccff;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .ec-fb-icon svg {
+            width: 16px;
+            height: 16px;
+            display: block;
+        }
+        @media (hover: hover) and (pointer: fine) {
+            .ec-fb-icon:hover {
+                background: #00a6fb;
+                border-color: #00a6fb;
+                color: #ffffff;
+                box-shadow: 0 0 12px rgba(0, 166, 251, 0.5);
+            }
+        }
+
+        /* Modal dialogs — Join DSDC popup + moderator message popup (shared) */
+        .modal {
+            display: none;
+        }
+        .modal.is-open {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-panel {
+            max-height: calc(100vh - 2rem);
+            overflow-y: auto;
+            animation: modal-in 0.25s ease;
+        }
+        @keyframes modal-in {
+            from { opacity: 0; transform: scale(0.96) translateY(8px); }
+            to { opacity: 1; transform: none; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .modal-panel { animation: none; }
+        }
+
+        /* Bangla text blocks (founder speech, moderator messages) */
+        .founder-speech,
+        .mod-speech-text {
+            font-family: 'Hanken Grotesk', 'Noto Sans Bengali', sans-serif;
+            line-height: 1.9;
+            overflow-wrap: anywhere;
+        }
+
+        /* Moderator emails — must never overflow the card */
+        .moderator-email {
+            overflow-wrap: anywhere;
+        }
+
+        /* Last paragraph of a multi-paragraph moderator message = quote style */
+        .speech-quote {
+            border-left: 3px solid #00a6fb;
+            padding-left: 1rem;
+            font-style: italic;
+            color: #94ccff;
+            font-size: 1.05em;
+        }
+
+        /* Moderators — 2x2 grid (md+), single column on mobile */
+        #moderators-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            max-width: 64rem;
+            margin-left: auto;
+            margin-right: auto;
+            align-items: stretch;
+        }
+        @media (min-width: 768px) {
+            #moderators-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 2rem;
+            }
+            /* a lone trailing (5th) card centers under the grid instead of stretching */
+            #moderators-grid > .mod-card:last-child:nth-child(odd) {
+                grid-column: 1 / -1;
+                width: calc(50% - 1rem);
+                justify-self: center;
+            }
+        }
+
+        /* Moderator card — photo left / details right on md+, stacked on mobile */
+        .mod-card {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        @media (min-width: 768px) {
+            .mod-card {
+                flex-direction: row;
+            }
+        }
+        .mod-card-photo {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4 / 5;
+            max-height: 70vh;
+            overflow: hidden;
+            background: #050b18;
+            flex-shrink: 0;
+        }
+        @media (min-width: 768px) {
+            .mod-card-photo {
+                width: 40%;
+                aspect-ratio: auto;
+                max-height: none;
+                min-height: 240px;
+                align-self: stretch;
+            }
+        }
+        .mod-card-details {
+            display: flex;
+            flex-direction: column;
+            flex: 1 1 0%;
+            min-width: 0;
+            padding: 1.25rem;
+        }
+        @media (min-width: 768px) {
+            .mod-card-details {
+                padding: 1.5rem;
+            }
         }
 
         .nav-link {
@@ -672,16 +881,16 @@
 
     <!-- Top Navigation Bar -->
     <nav class="fixed top-0 w-full z-[100] bg-surface/40 backdrop-blur-2xl border-b border-white/5 transition-all duration-500 py-3 md:py-4" id="top-nav">
-        <div class="flex justify-between items-center px-4 sm:px-6 md:px-12 max-w-container-max mx-auto w-full">
+        <div class="flex justify-between items-center px-4 sm:px-6 md:px-4 lg:px-8 xl:px-12 max-w-container-max mx-auto w-full">
             
             <!-- Navbar Brand / Logos -->
-            <a href="#" onclick="showHome(); return false;" class="flex items-center gap-2 md:gap-4 shrink-0">
+            <a href="#home" class="flex items-center gap-2 md:gap-4 shrink-0">
                 <div class="nb-logos flex items-center gap-2 md:gap-3 shrink-0">
                     <img loading="lazy" class="cl h-10 md:h-16 w-auto object-contain shrink-0" src="https://res.cloudinary.com/dd1x7wc7y/image/upload/v1779793138/KsMfljTl_dnnomh.webp" alt="BAF Shaheen College Logo">
                     <div class="ndiv w-[1px] h-8 md:h-10 bg-white/20 mx-0.5 md:mx-1 shrink-0"></div>
                     <img loading="lazy" class="dl h-12 md:h-20 w-auto object-contain shrink-0 transform scale-110" src="https://res.cloudinary.com/dd1x7wc7y/image/upload/v1779793489/1-removebg-preview_rwymms.png" alt="DSDC Wing Logo">
                 </div>
-                <div class="nav-brand-text flex flex-col justify-center text-left shrink-0">
+                <div class="nav-brand-text hidden lg:flex flex-col justify-center text-left shrink-0">
                     <span class="text-white/60 tracking-[0.25em] uppercase text-[9px] md:text-[10px] font-extrabold max-w-[120px] md:max-w-none leading-tight font-hanken">
                         DHAKA SHAHEEN<br>DEBATING CLUB
                     </span>
@@ -689,37 +898,29 @@
             </a>
 
             <!-- Desktop Nav Links -->
-            <div class="hidden md:flex gap-8 lg:gap-10 items-center text-[11px] lg:text-xs uppercase tracking-widest nav-links font-hanken font-bold">
-                <a class="nav-link text-primary font-black border-b-2 border-primary pb-1" id="nav-link-home" href="#" onclick="showHome(); return false;">Home</a>
-                <a class="nav-link text-on-surface-variant hover:text-primary transition-all" href="#" onclick="showHome(); setTimeout(() =&gt; document.getElementById('about').scrollIntoView({behavior:'smooth'}), 100); return false;">About</a>
-                
-                <!-- Semantic Dropdown Element -->
-                <div class="relative group">
-                    <a class="nav-link text-on-surface-variant hover:text-primary transition-all cursor-pointer" id="nav-link-exec" onclick="return false;">Executive</a>
+            <div class="hidden md:flex gap-1.5 lg:gap-3 xl:gap-5 items-center text-[10px] lg:text-[11px] uppercase tracking-[0.05em] xl:tracking-widest nav-links font-hanken font-bold whitespace-nowrap">
+                <a class="nav-link text-primary font-black border-b-2 border-primary pb-1" id="nav-link-home" href="#home">Home</a>
+                <a class="nav-link text-on-surface-variant hover:text-primary transition-all" id="nav-link-about" href="#about-us">About Us</a>
+
+                <!-- Leaders: hover opens on desktop, click toggles (never navigates) -->
+                <div class="relative group" id="nav-leaders-wrap">
+                    <a class="nav-link text-on-surface-variant hover:text-primary transition-all cursor-pointer" id="nav-link-leaders" href="#" onclick="toggleLeadersDropdown(event); return false;">Leaders</a>
                     <div class="dropdown rounded-sm overflow-hidden shadow-xl max-h-80 overflow-y-auto">
-                        <a href="#" onclick="showPage('page-ec','xi'); return false;">EC-XI</a>
-                        <a href="#" onclick="showPage('page-ec','x'); return false;">EC-X</a>
-                        <a href="#" onclick="showPage('page-ec','ix'); return false;">EC-IX</a>
-                        <a href="#" onclick="showPage('page-ec','viii'); return false;">EC-VIII</a>
-                        <a href="#" onclick="showPage('page-ec','vii'); return false;">EC-VII</a>
-                        <a href="#" onclick="showPage('page-ec','vi'); return false;">EC-VI</a>
-                        <a href="#" onclick="showPage('page-ec','v'); return false;">EC-V</a>
-                        <a href="#" onclick="showPage('page-ec','iv'); return false;">EC-IV</a>
-                        <a href="#" onclick="showPage('page-ec','iii'); return false;">EC-III</a>
-                        <a href="#" onclick="showPage('page-ec','ii'); return false;">EC-II</a>
-                        <a href="#" onclick="showPage('page-ec','i'); return false;">EC-I</a>
+                        <a href="#leaders-moderators">Moderators</a>
+                        <a href="#leaders-founders">Founders</a>
+                        <a href="#leaders-executives">Executives</a>
+                        <a href="#leaders-school-panel">School Panel</a>
                     </div>
                 </div>
 
-                <a class="nav-link text-on-surface-variant hover:text-primary transition-all" id="nav-link-events" href="#" onclick="showPage('page-events'); return false;">Events</a>
-                <a class="nav-link text-on-surface-variant hover:text-primary transition-all" id="nav-link-achieve" href="#" onclick="showPage('page-achievements'); return false;">Achievements</a>
-                <a class="nav-link text-on-surface-variant hover:text-primary transition-all" id="nav-link-contact" href="#" onclick="showPage('page-contact'); return false;">Contact</a>
-                <!-- Courses (gated: debater/admin only) -->
-                <a id="nav-courses" class="nav-link text-on-surface-variant hover:text-primary transition-all hidden" href="#" onclick="handleCoursesNav(); return false;">Courses</a>
+                <a class="nav-link text-on-surface-variant hover:text-primary transition-all" id="nav-link-events" href="#events">Events</a>
+                <a class="nav-link text-on-surface-variant hover:text-primary transition-all" id="nav-link-achieve" href="#achievements">Achievements</a>
+                <a class="nav-link text-on-surface-variant hover:text-primary transition-all" id="nav-link-archive" href="#archive">Archive</a>
+                <a class="nav-link text-on-surface-variant hover:text-primary transition-all" id="nav-courses" href="#courses">Courses</a>
+                <a class="nav-link text-on-surface-variant hover:text-primary transition-all" id="nav-link-contact" href="#contact">Contact</a>
 
-                <!-- Auth state: Log in / Profile icon (Join Club removed — login is join) -->
-                <div id="nav-auth-desktop" class="flex items-center gap-2 ml-2">
-                    <a id="nav-login-btn" href="#" onclick="showPage('page-auth'); return false;" class="text-on-surface-variant hover:text-primary transition-all text-[11px] lg:text-xs uppercase tracking-widest font-bold border border-white/10 rounded-full px-4 py-2 hover:border-primary/40">Log in</a>
+                <!-- Auth state: admin profile icon only (hidden when nobody is logged in) -->
+                <div id="nav-auth-desktop" class="flex items-center gap-2 ml-1 xl:ml-2">
                     <div id="nav-profile-wrap" class="hidden relative">
                         <button id="nav-profile-btn" onclick="toggleProfileDropdown(event)" aria-label="Profile menu" aria-expanded="false" class="w-9 h-9 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-black text-sm border border-white/10 hover:shadow-[0_0_15px_rgba(0,166,251,0.3)] transition-all">
                             <span id="nav-profile-initial" class="material-symbols-outlined text-[18px]">person</span>
@@ -729,7 +930,7 @@
                                 <p id="nav-profile-name" class="text-[11px] font-bold text-white/80 truncate"></p>
                                 <p class="text-[9px] uppercase tracking-widest text-on-surface-variant/60">Logged in</p>
                             </div>
-                            <a id="dropdown-admin-link" href="#" onclick="closeProfileDropdown(); showPage('page-admin'); return false;" class="hidden flex items-center gap-2 px-4 py-3 text-[11px] uppercase tracking-widest font-bold text-on-surface-variant hover:text-primary hover:bg-white/5 transition-colors">
+                            <a id="dropdown-admin-link" href="#admin" onclick="closeProfileDropdown()" class="hidden flex items-center gap-2 px-4 py-3 text-[11px] uppercase tracking-widest font-bold text-on-surface-variant hover:text-primary hover:bg-white/5 transition-colors">
                                 <span class="material-symbols-outlined text-sm">admin_panel_settings</span> Admin Panel
                             </a>
                             <div id="dropdown-admin-separator" class="hidden border-t border-white/5"></div>
@@ -751,40 +952,32 @@
 
         <!-- Mobile Slide-out Menu -->
         <div class="mobile-menu hidden flex-col gap-3 bg-[#0b1229]/95 backdrop-blur-xl border-b border-white/5 p-5 absolute top-full left-0 w-full z-[99]" id="mobileMenu">
-            <a class="text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2 border-b border-white/5" href="#" onclick="showHome(); closeMobileMenu(); return false;">Home</a>
-            <a class="text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2 border-b border-white/5" href="#" onclick="showHome(); closeMobileMenu(); setTimeout(() =&gt; document.getElementById('about').scrollIntoView({behavior:'smooth'}), 150); return false;">About DSDC</a>
-            <!-- Mobile Executive Accordion Selector -->
+            <a class="text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2 border-b border-white/5" href="#home" onclick="closeMobileMenu()">Home</a>
+            <a class="text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2 border-b border-white/5" href="#about-us" onclick="closeMobileMenu()">About Us</a>
+            <!-- Mobile Leaders Accordion Selector -->
             <div class="border-b border-white/5">
                 <button onclick="toggleMobileDropdown(event)" class="w-full text-left text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2 flex justify-between items-center focus:outline-none">
-                    <span>Executive</span>
+                    <span>Leaders</span>
                     <span class="material-symbols-outlined text-sm transition-transform duration-300" id="mobile-exec-arrow">keyboard_arrow_down</span>
                 </button>
                 <div id="mobile-exec-submenu" class="hidden flex-col pl-4 pb-2 gap-2 max-h-80 overflow-y-auto pr-2" style="scrollbar-width: thin; scrollbar-color: rgba(91,191,219,0.3) transparent;">
-                    <a class="text-on-surface-variant/80 hover:text-primary py-1 block uppercase tracking-widest text-[10px] font-semibold" href="#" onclick="showPage('page-ec','xi'); closeMobileMenu(); return false;">Executive XI</a>
-                    <a class="text-on-surface-variant/80 hover:text-primary py-1 block uppercase tracking-widest text-[10px] font-semibold" href="#" onclick="showPage('page-ec','x'); closeMobileMenu(); return false;">Executive X</a>
-                    <a class="text-on-surface-variant/80 hover:text-primary py-1 block uppercase tracking-widest text-[10px] font-semibold" href="#" onclick="showPage('page-ec','ix'); closeMobileMenu(); return false;">Executive IX</a>
-                    <a class="text-on-surface-variant/80 hover:text-primary py-1 block uppercase tracking-widest text-[10px] font-semibold" href="#" onclick="showPage('page-ec','viii'); closeMobileMenu(); return false;">Executive VIII</a>
-                    <a class="text-on-surface-variant/80 hover:text-primary py-1 block uppercase tracking-widest text-[10px] font-semibold" href="#" onclick="showPage('page-ec','vii'); closeMobileMenu(); return false;">Executive VII</a>
-                    <a class="text-on-surface-variant/80 hover:text-primary py-1 block uppercase tracking-widest text-[10px] font-semibold" href="#" onclick="showPage('page-ec','vi'); closeMobileMenu(); return false;">Executive VI</a>
-                    <a class="text-on-surface-variant/80 hover:text-primary py-1 block uppercase tracking-widest text-[10px] font-semibold" href="#" onclick="showPage('page-ec','v'); closeMobileMenu(); return false;">Executive V</a>
-                    <a class="text-on-surface-variant/80 hover:text-primary py-1 block uppercase tracking-widest text-[10px] font-semibold" href="#" onclick="showPage('page-ec','iv'); closeMobileMenu(); return false;">Executive IV</a>
-                    <a class="text-on-surface-variant/80 hover:text-primary py-1 block uppercase tracking-widest text-[10px] font-semibold" href="#" onclick="showPage('page-ec','iii'); closeMobileMenu(); return false;">Executive III</a>
-                    <a class="text-on-surface-variant/80 hover:text-primary py-1 block uppercase tracking-widest text-[10px] font-semibold" href="#" onclick="showPage('page-ec','ii'); closeMobileMenu(); return false;">Executive II</a>
-                    <a class="text-on-surface-variant/80 hover:text-primary py-1 block uppercase tracking-widest text-[10px] font-semibold" href="#" onclick="showPage('page-ec','i'); closeMobileMenu(); return false;">Executive I</a>
+                    <a class="text-on-surface-variant/80 hover:text-primary py-1 block uppercase tracking-widest text-[10px] font-semibold" href="#leaders-moderators" onclick="closeMobileMenu()">Moderators</a>
+                    <a class="text-on-surface-variant/80 hover:text-primary py-1 block uppercase tracking-widest text-[10px] font-semibold" href="#leaders-founders" onclick="closeMobileMenu()">Founders</a>
+                    <a class="text-on-surface-variant/80 hover:text-primary py-1 block uppercase tracking-widest text-[10px] font-semibold" href="#leaders-executives" onclick="closeMobileMenu()">Executives</a>
+                    <a class="text-on-surface-variant/80 hover:text-primary py-1 block uppercase tracking-widest text-[10px] font-semibold" href="#leaders-school-panel" onclick="closeMobileMenu()">School Panel</a>
                 </div>
             </div>
 
-            <a class="text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2 border-b border-white/5" href="#" onclick="showPage('page-events'); closeMobileMenu(); return false;">Events</a>
-            <a class="text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2 border-b border-white/5" href="#" onclick="showPage('page-achievements'); closeMobileMenu(); return false;">Achievements</a>
-            <a id="mobile-nav-contact" class="text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2" href="#" onclick="showPage('page-contact'); closeMobileMenu(); return false;">Contact Base</a>
-            <!-- Courses (gated) -->
-            <a id="mobile-nav-courses" class="hidden text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2 border-b border-white/5" href="#" onclick="handleCoursesNav(); closeMobileMenu(); return false;">Courses (coming soon)</a>
+            <a class="text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2 border-b border-white/5" href="#events" onclick="closeMobileMenu()">Events</a>
+            <a class="text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2 border-b border-white/5" href="#achievements" onclick="closeMobileMenu()">Achievements</a>
+            <a class="text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2 border-b border-white/5" href="#archive" onclick="closeMobileMenu()">Archive</a>
+            <a id="mobile-nav-courses" class="text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2 border-b border-white/5" href="#courses" onclick="closeMobileMenu()">Courses</a>
+            <a id="mobile-nav-contact" class="text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2" href="#contact" onclick="closeMobileMenu()">Contact</a>
 
-            <!-- Auth mobile -->
-            <a id="mobile-nav-login" class="text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2" href="#" onclick="showPage('page-auth'); closeMobileMenu(); return false;">Log in</a>
+            <!-- Admin mobile (only shown when an admin is logged in) -->
             <div id="mobile-nav-user" class="hidden flex-col gap-2 py-2 border-t border-white/5 mt-2">
                 <span id="mobile-nav-user-name" class="text-primary text-[11px] font-bold tracking-widest uppercase"></span>
-                <a id="mobile-dropdown-admin-link" href="#" onclick="showPage('page-admin'); closeMobileMenu(); return false;" class="hidden text-primary text-[11px] font-bold tracking-widest uppercase">Admin Panel</a>
+                <a id="mobile-dropdown-admin-link" href="#admin" onclick="closeMobileMenu()" class="hidden text-primary text-[11px] font-bold tracking-widest uppercase">Admin Panel</a>
                 <a href="#" onclick="handleLogout(); closeMobileMenu(); return false;" class="text-on-surface-variant/60 hover:text-primary text-[10px] uppercase tracking-widest font-bold">Log out</a>
             </div>
         </div>
@@ -819,8 +1012,8 @@
                         Empowering Shaheens to think <span class="text-primary italic font-semibold">critically</span>, speak <span class="text-primary italic font-semibold">boldly</span>, and lead with <span class="text-primary italic font-semibold" style="font-size: 16px;"><br>conviction<br></span>
                     </p>
                     <div class="flex flex-col sm:flex-row justify-center gap-4 md:gap-6 max-w-xs sm:max-w-none mx-auto w-full sm:w-auto hero-cta">
-                        <a class="bg-primary-container text-on-primary-container px-8 md:px-12 py-4 md:py-5 font-black text-xs md:text-sm tracking-[0.2em] rounded-xl hover:shadow-[0_0_40px_rgba(0,166,251,0.5)] transition-all flex items-center justify-center gap-3 group uppercase w-full sm:w-auto" href="https://docs.google.com/forms/d/e/1FAIpQLSdWVruClouwYDEAJD6aI_YL2etwzJRMTVCD_VP8pSbqN35jzA/viewform" target="_blank" rel="noopener noreferrer" style="width: 158.567px; font-size: 10px; letter-spacing: 1.2px; height: 52px;">JOIN DSDC</a>
-                        <a class="glass-card text-on-surface px-8 md:px-12 py-4 md:py-5 font-black text-xs md:text-sm tracking-[0.2em] rounded-xl hover:bg-white/10 transition-all uppercase border-white/10 w-full sm:w-auto flex items-center justify-center" href="#about" onclick="document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' }); return false;" style="width: 158.417px; height: 52px; font-size: 10px; letter-spacing: 1px;">Legacy</a>
+                        <button type="button" data-modal-open="join-modal" class="bg-primary-container text-on-primary-container px-8 md:px-12 py-4 md:py-5 font-black text-xs md:text-sm tracking-[0.2em] rounded-xl hover:shadow-[0_0_40px_rgba(0,166,251,0.5)] transition-all flex items-center justify-center gap-3 group uppercase w-full sm:w-auto cursor-pointer" style="width: 158.567px; font-size: 10px; letter-spacing: 1.2px; height: 52px;">JOIN DSDC</button>
+                        <a class="glass-card text-on-surface px-8 md:px-12 py-4 md:py-5 font-black text-xs md:text-sm tracking-[0.2em] rounded-xl hover:bg-white/10 transition-all uppercase border-white/10 w-full sm:w-auto flex items-center justify-center" href="#about-us" style="width: 158.417px; height: 52px; font-size: 10px; letter-spacing: 1px;">Legacy</a>
                     </div>
                 </div>
                 <div class="absolute bottom-6 md:bottom-10 left-1/2 -translate-x-1/2 animate-bounce opacity-30">
@@ -831,20 +1024,16 @@
             <!-- Statistics & Excellence -->
             <section class="py-12 md:py-24 relative bg-surface-container-lowest/30">
                 <div class="max-w-container-max px-4 sm:px-6 md:px-16 mx-auto">
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
-                        <div class="glass-card p-6 md:p-10 rounded-2xl md:rounded-3xl text-center border-draw reveal active">
-                            <div class="text-3xl md:text-5xl font-black text-primary mb-1 md:mb-2 italic">10+</div>
-                            <div class="text-[9px] md:text-xs uppercase tracking-widest text-on-surface-variant font-bold leading-tight">Intra-College Trophies</div>
-                        </div>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
                         <div class="glass-card p-6 md:p-10 rounded-2xl md:rounded-3xl text-center border-draw reveal active" style="transition-delay: 100ms;">
-                            <div class="text-3xl md:text-5xl font-black text-primary mb-1 md:mb-2 italic">10+</div>
+                            <div class="text-3xl md:text-5xl font-black text-primary mb-1 md:mb-2 italic">30+</div>
                             <div class="text-[9px] md:text-xs uppercase tracking-widest text-on-surface-variant font-bold leading-tight">National Titles</div>
                         </div>
                         <div class="glass-card p-6 md:p-10 rounded-2xl md:rounded-3xl text-center border-draw reveal active" style="transition-delay: 200ms;">
                             <div class="text-3xl md:text-5xl font-black text-primary mb-1 md:mb-2 italic">2015</div>
                             <div class="text-[9px] md:text-xs uppercase tracking-widest text-on-surface-variant font-bold leading-tight">Legacy Established</div>
                         </div>
-                        <div class="glass-card p-6 md:p-10 rounded-2xl md:rounded-3xl text-center border-draw reveal active" style="transition-delay: 300ms;">
+                        <div class="glass-card p-6 md:p-10 rounded-2xl md:rounded-3xl text-center border-draw reveal active col-span-2 md:col-span-1" style="transition-delay: 300ms;">
                             <div class="text-3xl md:text-5xl font-black text-primary mb-1 md:mb-2 italic">200+</div>
                             <div class="text-[9px] md:text-xs uppercase tracking-widest text-on-surface-variant font-bold leading-tight">Active Members</div>
                         </div>
@@ -1007,9 +1196,9 @@
                     <h2 class="text-3xl sm:text-5xl md:text-7xl text-white font-black italic uppercase tracking-tighter mb-4 md:mb-8 leading-none" style="font-size: 70px;">Join the League</h2>
                     <p class="text-base md:text-xl text-on-surface-variant max-w-2xl mx-auto mb-8 md:mb-12 leading-relaxed" style="font-size: 17px;">Join our elite network of debaters to receive exclusive updates on upcoming nationals, workshops, and club events.</p>
                     <div class="flex justify-center">
-                        <a href="https://docs.google.com/forms/d/e/1FAIpQLSdWVruClouwYDEAJD6aI_YL2etwzJRMTVCD_VP8pSbqN35jzA/viewform" target="_blank" rel="noopener noreferrer" class="bg-primary-container text-on-primary-container font-black px-10 md:px-16 py-4 md:py-5 rounded-xl md:rounded-2xl hover:shadow-[0_0_40px_rgba(0,166,251,0.5)] transition-all uppercase tracking-[0.2em] text-xs md:text-sm hover:scale-105 active:scale-95 duration-300">
+                        <button type="button" data-modal-open="join-modal" class="bg-primary-container text-on-primary-container font-black px-10 md:px-16 py-4 md:py-5 rounded-xl md:rounded-2xl hover:shadow-[0_0_40px_rgba(0,166,251,0.5)] transition-all uppercase tracking-[0.2em] text-xs md:text-sm hover:scale-105 active:scale-95 duration-300 cursor-pointer">
                             Register Now
-                        </a>
+                        </button>
                     </div>
                 </div>
             </section>
@@ -1062,8 +1251,12 @@
                         
                         <!-- Shahbin Ahnaf -->
                         <div class="member-card border-draw group glass-card rounded-2xl overflow-hidden flex flex-col shadow-2xl p-4">
-                            <div class="aspect-[4/5] overflow-hidden mb-4 rounded-xl bg-surface-container-lowest">
-                                <img loading="lazy" alt="Shahbin Ahnaf" class="image-zoom w-full h-full object-cover transition-all duration-500" src="https://res.cloudinary.com/dd1x7wc7y/image/upload/v1779787001/pres_a3h45f.jpg">
+                            <div class="aspect-[4/5] overflow-hidden mb-4 rounded-xl bg-surface-container-lowest relative">
+                                <div class="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                                    <img src="https://res.cloudinary.com/dd1x7wc7y/image/upload/v1779793489/1-removebg-preview_rwymms.png" alt="" loading="lazy" class="w-12 opacity-70">
+                                    <span class="text-[9px] uppercase tracking-widest text-on-surface-variant/60 font-bold">DSDC</span>
+                                </div>
+                                <img loading="lazy" alt="Shahbin Ahnaf" src="images/executives/PRESIDENT.jpeg" onerror="this.style.display='none'" class="image-zoom relative w-full h-full object-cover transition-all duration-500">
                             </div>
                             <div class="px-2 pb-2 flex flex-col flex-grow">
                                 <span class="text-secondary text-[9px] md:text-[10px] uppercase tracking-widest mb-1 font-bold block">President</span>
@@ -1075,8 +1268,12 @@
 
                         <!-- Afra Anika Nodi -->
                         <div class="member-card border-draw group glass-card rounded-2xl overflow-hidden flex flex-col shadow-2xl p-4">
-                            <div class="aspect-[4/5] overflow-hidden mb-4 rounded-xl bg-surface-container-lowest">
-                                <img loading="lazy" alt="Afra Anika Nodi" class="image-zoom w-full h-full object-cover transition-all duration-500" src="https://res.cloudinary.com/dd1x7wc7y/image/upload/v1779786999/nodi_kd3lhf.jpg">
+                            <div class="aspect-[4/5] overflow-hidden mb-4 rounded-xl bg-surface-container-lowest relative">
+                                <div class="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                                    <img src="https://res.cloudinary.com/dd1x7wc7y/image/upload/v1779793489/1-removebg-preview_rwymms.png" alt="" loading="lazy" class="w-12 opacity-70">
+                                    <span class="text-[9px] uppercase tracking-widest text-on-surface-variant/60 font-bold">DSDC</span>
+                                </div>
+                                <img loading="lazy" alt="Afra Anika Nodi" src="images/executives/GS.jpeg" onerror="this.style.display='none'" class="image-zoom relative w-full h-full object-cover transition-all duration-500">
                             </div>
                             <div class="px-2 pb-2 flex flex-col flex-grow">
                                 <span class="text-secondary text-[9px] md:text-[10px] uppercase tracking-widest mb-1 font-bold block">General Secretary</span>
@@ -1088,11 +1285,15 @@
 
                         <!-- Jihad Hossain Riyad -->
                         <div class="member-card border-draw group glass-card rounded-2xl overflow-hidden flex flex-col shadow-2xl p-4">
-                            <div class="aspect-[4/5] overflow-hidden mb-4 rounded-xl bg-surface-container-lowest">
-                                <img loading="lazy" alt="Jihad Hossain Riyad" class="image-zoom w-full h-full object-cover transition-all duration-500" src="https://res.cloudinary.com/dd1x7wc7y/image/upload/v1779787001/vp_zurrck.jpg">
+                            <div class="aspect-[4/5] overflow-hidden mb-4 rounded-xl bg-surface-container-lowest relative">
+                                <div class="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                                    <img src="https://res.cloudinary.com/dd1x7wc7y/image/upload/v1779793489/1-removebg-preview_rwymms.png" alt="" loading="lazy" class="w-12 opacity-70">
+                                    <span class="text-[9px] uppercase tracking-widest text-on-surface-variant/60 font-bold">DSDC</span>
+                                </div>
+                                <img loading="lazy" alt="Jihad Hossain Riyad" src="images/executives/VPadmin.jpeg" onerror="this.style.display='none'" class="image-zoom relative w-full h-full object-cover transition-all duration-500">
                             </div>
                             <div class="px-2 pb-2 flex flex-col flex-grow">
-                                <span class="text-secondary text-[9px] md:text-[10px] uppercase tracking-widest mb-1 font-bold block">VP (Administration)</span>
+                                <span class="text-secondary text-[9px] md:text-[10px] uppercase tracking-widest mb-1 font-bold block">Vice President (Administration)</span>
                                 <h3 class="text-on-surface text-lg md:text-xl mb-1.5 font-bold">Jihad Hossain Riyad</h3>
                                 <p class="italic text-on-surface-variant text-xs leading-relaxed mb-6 font-body-md">"Where ideas clash, leaders rise."</p>
 
@@ -1101,32 +1302,28 @@
 
                         <!-- Maliha Mehnaz -->
                         <div class="member-card border-draw group glass-card rounded-2xl overflow-hidden flex flex-col shadow-2xl p-4">
-                            <div class="aspect-[4/5] overflow-hidden mb-4 rounded-xl bg-surface-container-lowest">
-                                <img loading="lazy" alt="Maliha Mehnaz" class="image-zoom w-full h-full object-cover transition-all duration-500" src="https://res.cloudinary.com/dd1x7wc7y/image/upload/v1779787001/vpdebate_vedi09.jpg">
+                            <div class="aspect-[4/5] overflow-hidden mb-4 rounded-xl bg-surface-container-lowest relative">
+                                <div class="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                                    <img src="https://res.cloudinary.com/dd1x7wc7y/image/upload/v1779793489/1-removebg-preview_rwymms.png" alt="" loading="lazy" class="w-12 opacity-70">
+                                    <span class="text-[9px] uppercase tracking-widest text-on-surface-variant/60 font-bold">DSDC</span>
+                                </div>
+                                <img loading="lazy" alt="Maliha Mehnaz" src="images/executives/VPdw.jpeg" onerror="this.style.display='none'" class="image-zoom relative w-full h-full object-cover transition-all duration-500">
                             </div>
                             <div class="px-2 pb-2 flex-grow flex flex-col">
-                                <span class="text-secondary text-[8px] md:text-[9px] uppercase tracking-wider mb-1 block font-bold">VP (Debate &amp; Workshop)</span>
+                                <span class="text-secondary text-[8px] md:text-[9px] uppercase tracking-wider mb-1 block font-bold">Vice President (D&amp;W)</span>
                                 <h3 class="text-on-surface text-base md:text-lg font-bold mb-1">Maliha Mehnaz</h3>
                                 <p class="text-on-surface-variant text-xs italic mb-4 font-body-md">"Ideas grow stronger when challenged with respect."</p>
                             </div>
                         </div>
 
-                        <!-- Ali Mahmud Anondo -->
-                        <div class="member-card border-draw group glass-card rounded-2xl overflow-hidden flex flex-col shadow-2xl p-4">
-                            <div class="aspect-[4/5] overflow-hidden mb-4 rounded-xl bg-surface-container-lowest">
-                                <img loading="lazy" alt="Ali Mahmud Anondo" class="image-zoom w-full h-full object-cover transition-all duration-500" src="https://res.cloudinary.com/dd1x7wc7y/image/upload/v1779786995/os_wmxwd1.jpg">
-                            </div>
-                            <div class="px-2 pb-2 flex-grow flex flex-col">
-                                <span class="text-secondary text-[8px] md:text-[9px] uppercase tracking-wider mb-1 block font-bold">Organizing Secretary</span>
-                                <h3 class="text-on-surface text-base md:text-lg font-bold mb-1">Ali Mahmud Anondo</h3>
-                                <p class="text-on-surface-variant text-xs italic mb-4 font-body-md">"Carrying stars in my eyes, love in my heart and dreams in my mind."</p>
-                            </div>
-                        </div>
-
                         <!-- Md Mohtasim Alam -->
                         <div class="member-card border-draw group glass-card rounded-2xl overflow-hidden flex flex-col shadow-2xl p-4">
-                            <div class="aspect-[4/5] overflow-hidden mb-4 rounded-xl bg-surface-container-lowest">
-                                <img loading="lazy" alt="Md Mohtasim Alam" class="image-zoom w-full h-full object-cover transition-all duration-500" src="https://res.cloudinary.com/dd1x7wc7y/image/upload/v1779786994/js_q3wvty.jpg">
+                            <div class="aspect-[4/5] overflow-hidden mb-4 rounded-xl bg-surface-container-lowest relative">
+                                <div class="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                                    <img src="https://res.cloudinary.com/dd1x7wc7y/image/upload/v1779793489/1-removebg-preview_rwymms.png" alt="" loading="lazy" class="w-12 opacity-70">
+                                    <span class="text-[9px] uppercase tracking-widest text-on-surface-variant/60 font-bold">DSDC</span>
+                                </div>
+                                <img loading="lazy" alt="Md Mohtasim Alam" src="images/executives/JS.jpeg" onerror="this.style.display='none'" class="image-zoom relative w-full h-full object-cover transition-all duration-500">
                             </div>
                             <div class="px-2 pb-2 flex-grow flex flex-col">
                                 <span class="text-secondary text-[8px] md:text-[9px] uppercase mb-1 font-bold block">Joint Secretary</span>
@@ -1135,10 +1332,30 @@
                             </div>
                         </div>
 
+                        <!-- Ali Mahmud Anondo -->
+                        <div class="member-card border-draw group glass-card rounded-2xl overflow-hidden flex flex-col shadow-2xl p-4">
+                            <div class="aspect-[4/5] overflow-hidden mb-4 rounded-xl bg-surface-container-lowest relative">
+                                <div class="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                                    <img src="https://res.cloudinary.com/dd1x7wc7y/image/upload/v1779793489/1-removebg-preview_rwymms.png" alt="" loading="lazy" class="w-12 opacity-70">
+                                    <span class="text-[9px] uppercase tracking-widest text-on-surface-variant/60 font-bold">DSDC</span>
+                                </div>
+                                <img loading="lazy" alt="Ali Mahmud Anondo" src="images/executives/OS.jpeg" onerror="this.style.display='none'" class="image-zoom relative w-full h-full object-cover transition-all duration-500">
+                            </div>
+                            <div class="px-2 pb-2 flex-grow flex flex-col">
+                                <span class="text-secondary text-[8px] md:text-[9px] uppercase tracking-wider mb-1 block font-bold">Organizing Secretary</span>
+                                <h3 class="text-on-surface text-base md:text-lg font-bold mb-1">Ali Mahmud Anondo</h3>
+                                <p class="text-on-surface-variant text-xs italic mb-4 font-body-md">"Carrying stars in my eyes, love in my heart and dreams in my mind."</p>
+                            </div>
+                        </div>
+
                         <!-- Rutuba Taufique -->
                         <div class="member-card border-draw group glass-card rounded-2xl overflow-hidden flex flex-col shadow-2xl p-4">
-                            <div class="aspect-[4/5] overflow-hidden mb-4 rounded-xl bg-surface-container-lowest">
-                                <img loading="lazy" alt="Rutuba Taufique" class="image-zoom w-full h-full object-cover transition-all duration-500" src="https://res.cloudinary.com/dd1x7wc7y/image/upload/v1779787001/rutuba_ngpstb.jpg">
+                            <div class="aspect-[4/5] overflow-hidden mb-4 rounded-xl bg-surface-container-lowest relative">
+                                <div class="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                                    <img src="https://res.cloudinary.com/dd1x7wc7y/image/upload/v1779793489/1-removebg-preview_rwymms.png" alt="" loading="lazy" class="w-12 opacity-70">
+                                    <span class="text-[9px] uppercase tracking-widest text-on-surface-variant/60 font-bold">DSDC</span>
+                                </div>
+                                <img loading="lazy" alt="Rutuba Taufique" src="images/executives/PS.jpeg" onerror="this.style.display='none'" class="image-zoom relative w-full h-full object-cover transition-all duration-500">
                             </div>
                             <div class="px-2 pb-2 flex-grow flex flex-col">
                                 <span class="text-secondary text-[8px] md:text-[9px] uppercase mb-1 font-bold block">Publication Secretary</span>
@@ -1147,10 +1364,29 @@
                             </div>
                         </div>
 
+                        <!-- Rubaiyat Islam Rifat -->
+                        <div class="member-card border-draw group glass-card rounded-2xl overflow-hidden flex flex-col shadow-2xl p-4">
+                            <div class="aspect-[4/5] overflow-hidden mb-4 rounded-xl bg-surface-container-lowest relative">
+                                <div class="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                                    <img src="https://res.cloudinary.com/dd1x7wc7y/image/upload/v1779793489/1-removebg-preview_rwymms.png" alt="" loading="lazy" class="w-12 opacity-70">
+                                    <span class="text-[9px] uppercase tracking-widest text-on-surface-variant/60 font-bold">DSDC</span>
+                                </div>
+                                <img loading="lazy" alt="Rubaiyat Islam Rifat" src="images/executives/OFFICE.jpeg" onerror="this.style.display='none'" class="image-zoom relative w-full h-full object-cover transition-all duration-500">
+                            </div>
+                            <div class="px-2 pb-2 flex-grow flex flex-col">
+                                <span class="text-secondary text-[8px] md:text-[9px] uppercase mb-1 font-bold block">Office Secretary</span>
+                                <h4 class="text-on-surface font-bold mb-1 text-base md:text-lg">Rubaiyat Islam Rifat</h4>
+                            </div>
+                        </div>
+
                         <!-- Muntasir Ahmed -->
                         <div class="member-card border-draw group glass-card rounded-2xl overflow-hidden flex flex-col shadow-2xl p-4">
-                            <div class="aspect-[4/5] overflow-hidden mb-4 rounded-xl bg-surface-container-lowest">
-                                <img loading="lazy" alt="Muntasir Ahmed" class="image-zoom w-full h-full object-cover transition-all duration-500" src="https://res.cloudinary.com/dd1x7wc7y/image/upload/v1779786995/konoeksecretary_ncy0qe.jpg">
+                            <div class="aspect-[4/5] overflow-hidden mb-4 rounded-xl bg-surface-container-lowest relative">
+                                <div class="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                                    <img src="https://res.cloudinary.com/dd1x7wc7y/image/upload/v1779793489/1-removebg-preview_rwymms.png" alt="" loading="lazy" class="w-12 opacity-70">
+                                    <span class="text-[9px] uppercase tracking-widest text-on-surface-variant/60 font-bold">DSDC</span>
+                                </div>
+                                <img loading="lazy" alt="Muntasir Ahmed" src="images/executives/IT.jpeg" onerror="this.style.display='none'" class="image-zoom relative w-full h-full object-cover transition-all duration-500">
                             </div>
                             <div class="px-2 pb-2 flex-grow flex flex-col">
                                 <span class="text-secondary text-[8px] md:text-[9px] uppercase mb-1 font-bold block">IT Secretary</span>
@@ -1970,6 +2206,189 @@
             </section>
         </div>
 
+        <!-- ABOUT US SUBPAGE -->
+        <div id="page-about" class="page hidden bg-[#081425] bg-mesh overflow-hidden relative min-h-screen" tabindex="-1">
+            <div class="nebula-blob bg-[#00a6fb]/10 top-[-15%] left-[-10%]"></div>
+            <div class="nebula-blob bg-[#e9c400]/5 bottom-[-15%] right-[-10%]" style="animation-delay: -5s;"></div>
+            <div class="floating-bg-text top-40 -left-20">ABOUT</div>
+            <div class="floating-bg-text bottom-40 -right-20">DSDC</div>
+            <section class="pt-20 md:pt-24 pb-8 px-4 sm:px-6 md:px-16 max-w-7xl mx-auto text-center relative z-10">
+                <div class="max-w-3xl mx-auto">
+                    <span class="text-[#94ccff] font-label-caps text-[10px] md:text-xs uppercase tracking-[0.3em] mb-3 block font-extrabold">Who We Are</span>
+                    <h1 class="text-3xl sm:text-5xl md:text-7xl text-white tracking-tight leading-none mb-4 md:mb-6 font-black italic uppercase px-6">ABOUT <span class="text-gradient-cyan glow-cyan block md:inline">US</span></h1>
+                    <div class="w-24 md:w-32 h-1 bg-gradient-to-r from-transparent via-primary-container to-transparent mx-auto rounded-full blur-[1px] mb-8"></div>
+                </div>
+            </section>
+            <div class="inner-page-content max-w-7xl mx-auto px-4 sm:px-6 md:px-16 relative z-10 pb-16 md:pb-24">
+
+                <!-- Lead block -->
+                <div class="max-w-3xl mx-auto text-center md:text-left mb-12 md:mb-16 reveal">
+                    <h2 class="text-3xl sm:text-4xl md:text-5xl text-white font-black tracking-tight mb-4">About DSDC</h2>
+                    <div class="w-24 md:w-40 h-1.5 md:h-2 bg-primary-container rounded-full shadow-[0_0_20px_rgba(0,166,251,0.5)] mx-auto md:mx-0 mb-6 md:mb-8"></div>
+                    <p class="text-lg md:text-2xl text-on-surface-variant leading-relaxed">Dhaka Shaheen Debating Club (DSDC) was founded in 2015 by Aurgho Aurpon and Safikul Islam Shawon with a clear purpose: to give students a place to learn the art of debate, build confidence, and speak with conviction. From a small group of passionate debaters, DSDC has grown into one of the most active and respected debating clubs in Dhaka.</p>
+                </div>
+
+                <!-- Stats strip -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 max-w-4xl mx-auto mb-12 md:mb-16 reveal">
+                    <div class="glass-card rounded-2xl p-4 md:p-6 text-center">
+                        <p class="text-3xl md:text-4xl font-black text-white mb-1">2015</p>
+                        <p class="text-[10px] md:text-xs uppercase tracking-widest text-[#94ccff] font-bold">Founded</p>
+                    </div>
+                    <div class="glass-card rounded-2xl p-4 md:p-6 text-center">
+                        <p class="text-3xl md:text-4xl font-black text-white mb-1" data-count-to="2">2</p>
+                        <p class="text-[10px] md:text-xs uppercase tracking-widest text-[#94ccff] font-bold">Wings (College &amp; School)</p>
+                    </div>
+                    <div class="glass-card rounded-2xl p-4 md:p-6 text-center">
+                        <p class="text-3xl md:text-4xl font-black text-white mb-1" data-count-to="2">2</p>
+                        <p class="text-[10px] md:text-xs uppercase tracking-widest text-[#94ccff] font-bold">Inter-Shaheen Debate Championships</p>
+                    </div>
+                    <div class="glass-card rounded-2xl p-4 md:p-6 text-center">
+                        <p class="text-3xl md:text-4xl font-black text-white mb-1" data-count-to="17">17</p>
+                        <p class="text-[10px] md:text-xs uppercase tracking-widest text-[#94ccff] font-bold">Other Championship Titles</p>
+                    </div>
+                </div>
+
+                <!-- Remaining paragraphs — centered reading column -->
+                <div class="max-w-2xl mx-auto space-y-8 md:space-y-10 reveal">
+                    <div>
+                        <p class="text-[10px] uppercase tracking-[0.3em] text-[#94ccff] font-extrabold mb-3">Our Wings</p>
+                        <div class="border-l-2 border-[#00a6fb]/60 pl-5 md:pl-6">
+                            <p class="text-base md:text-lg text-on-surface-variant leading-relaxed">Today, the club is home to two wings: a College Wing and a School Wing, the latter launched in 2026 to introduce younger students to debating. Across both wings, DSDC runs Bangla and English divisions, allowing members to compete in the language they are most comfortable with while developing skills in critical thinking, research, public speaking, and teamwork.</p>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="text-[10px] uppercase tracking-[0.3em] text-[#94ccff] font-extrabold mb-3">Our Results</p>
+                        <div class="border-l-2 border-[#00a6fb]/60 pl-5 md:pl-6">
+                            <p class="text-base md:text-lg text-on-surface-variant leading-relaxed">Our results reflect that commitment. DSDC has won two Inter-Shaheen Debate Championships and 17 other championship titles, along with several runner-up finishes. Behind every trophy are countless hours of preparation, practice rounds, and the dedication of our debaters.</p>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="text-[10px] uppercase tracking-[0.3em] text-[#94ccff] font-extrabold mb-3">Our Guidance</p>
+                        <div class="border-l-2 border-[#00a6fb]/60 pl-5 md:pl-6">
+                            <p class="text-base md:text-lg text-on-surface-variant leading-relaxed">DSDC has benefited from the guidance of <span class="text-primary font-bold">Rubaiyat Samad Bhai</span>, who previously served as the coach of the English Wing. Currently, <span class="text-primary font-bold">Noor Mohammad Shuvo Bhai</span> serves as the coach of the Bangla Wing, providing structured guidance and training to help its debaters improve their skills and pursue greater achievements.</p>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="text-base md:text-lg text-on-surface-variant leading-relaxed">Beyond competition, DSDC is a club where students sharpen their minds, challenge ideas, and grow together. You can follow our journey on our YouTube channel, where we share debates, speeches, and highlights from the club.</p>
+                    </div>
+                </div>
+
+                <!-- YouTube button -->
+                <div class="mt-10 md:mt-12 text-center reveal">
+                    <a href="https://www.youtube.com/@DSDC-YT" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-3 px-6 md:px-8 py-3 md:py-4 rounded-xl bg-primary-container text-on-primary-container font-black uppercase tracking-[0.2em] text-xs md:text-sm hover:shadow-[0_0_40px_rgba(0,166,251,0.5)] hover:scale-[1.02] active:scale-95 transition-all">Visit our YouTube channel <span class="material-symbols-outlined text-lg">arrow_outward</span></a>
+                </div>
+            </div>
+        </div>
+
+        <!-- ARCHIVE SUBPAGE -->
+        <div id="page-archive" class="page hidden bg-[#081425] bg-mesh overflow-hidden relative min-h-screen" tabindex="-1">
+            <div class="nebula-blob bg-[#00a6fb]/10 top-[-15%] left-[-10%]"></div>
+            <div class="nebula-blob bg-[#e9c400]/5 bottom-[-15%] right-[-10%]" style="animation-delay: -5s;"></div>
+            <div class="floating-bg-text top-40 -left-20">ARCHIVE</div>
+            <div class="floating-bg-text bottom-40 -right-20">LEGACY</div>
+            <section class="pt-20 md:pt-24 pb-8 px-4 sm:px-6 md:px-16 max-w-7xl mx-auto text-center relative z-10">
+                <div class="max-w-3xl mx-auto">
+                    <span class="text-[#94ccff] font-label-caps text-[10px] md:text-xs uppercase tracking-[0.3em] mb-3 block font-extrabold">Our Legacy</span>
+                    <h1 class="text-3xl sm:text-5xl md:text-7xl text-white tracking-tight leading-none mb-4 md:mb-6 font-black italic uppercase px-6">ARCHIVE</h1>
+                    <div class="w-24 md:w-32 h-1 bg-gradient-to-r from-transparent via-primary-container to-transparent mx-auto rounded-full blur-[1px] mb-8"></div>
+                </div>
+            </section>
+            <div class="inner-page-content max-w-7xl mx-auto px-4 sm:px-6 md:px-16 relative z-10 pb-16 md:pb-24">
+                <p class="text-center text-on-surface-variant text-sm md:text-lg">Coming soon</p>
+            </div>
+        </div>
+
+        <!-- LEADERS — MODERATORS SUBPAGE -->
+        <div id="page-moderators" class="page hidden bg-[#081425] bg-mesh overflow-hidden relative min-h-screen" tabindex="-1">
+            <div class="nebula-blob bg-[#00a6fb]/10 top-[-15%] left-[-10%]"></div>
+            <div class="nebula-blob bg-[#e9c400]/5 bottom-[-15%] right-[-10%]" style="animation-delay: -5s;"></div>
+            <div class="floating-bg-text top-40 -left-20">LEADERSHIP</div>
+            <div class="floating-bg-text bottom-40 -right-20">EXCELLENCE</div>
+            <section class="pt-20 md:pt-24 pb-8 px-4 sm:px-6 md:px-16 max-w-7xl mx-auto text-center relative z-10">
+                <div class="max-w-3xl mx-auto">
+                    <span class="text-[#94ccff] font-label-caps text-[10px] md:text-xs uppercase tracking-[0.3em] mb-3 block font-extrabold">The Leadership</span>
+                    <h1 class="text-3xl sm:text-5xl md:text-7xl text-white tracking-tight leading-none mb-4 md:mb-6 font-black italic uppercase px-6">MODERA<span class="text-gradient-cyan glow-cyan block md:inline">TORS</span></h1>
+                    <div class="w-24 md:w-32 h-1 bg-gradient-to-r from-transparent via-primary-container to-transparent mx-auto rounded-full blur-[1px] mb-6 md:mb-8"></div>
+                </div>
+            </section>
+            <div class="inner-page-content max-w-7xl mx-auto px-4 md:px-margin-desktop relative z-10 pb-16 md:pb-24">
+                <!-- Moderator cards rendered by JS from the MODERATORS array (see the script at the bottom) -->
+                <div id="moderators-grid"></div>
+            </div>
+        </div>
+
+        <!-- LEADERS — FOUNDERS SUBPAGE -->
+        <div id="page-founders" class="page hidden bg-[#081425] bg-mesh overflow-hidden relative min-h-screen" tabindex="-1">
+            <div class="nebula-blob bg-[#00a6fb]/10 top-[-15%] left-[-10%]"></div>
+            <div class="nebula-blob bg-[#e9c400]/5 bottom-[-15%] right-[-10%]" style="animation-delay: -5s;"></div>
+            <div class="floating-bg-text top-40 -left-20">LEADERSHIP</div>
+            <div class="floating-bg-text bottom-40 -right-20">EXCELLENCE</div>
+            <section class="pt-20 md:pt-24 pb-8 px-4 sm:px-6 md:px-16 max-w-7xl mx-auto text-center relative z-10">
+                <div class="max-w-3xl mx-auto">
+                    <span class="text-[#94ccff] font-label-caps text-[10px] md:text-xs uppercase tracking-[0.3em] mb-3 block font-extrabold">The Leadership</span>
+                    <h1 class="text-3xl sm:text-5xl md:text-7xl text-white tracking-tight leading-none mb-4 md:mb-6 font-black italic uppercase px-6">FOUND<span class="text-gradient-cyan glow-cyan block md:inline">ERS</span></h1>
+                    <div class="w-24 md:w-32 h-1 bg-gradient-to-r from-transparent via-primary-container to-transparent mx-auto rounded-full blur-[1px] mb-6 md:mb-8"></div>
+                </div>
+            </section>
+            <div class="inner-page-content max-w-4xl mx-auto px-4 md:px-margin-desktop relative z-10 pb-16 md:pb-24">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8 max-w-md sm:max-w-none mx-auto w-full mb-8 md:mb-12">
+                    <!-- Safikul Islam Shawon -->
+                    <div class="member-card border-draw group glass-card rounded-2xl overflow-hidden flex flex-col shadow-2xl p-4">
+                        <div class="aspect-[4/5] overflow-hidden mb-4 rounded-xl bg-surface-container-lowest relative">
+                            <div class="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                                <img src="https://res.cloudinary.com/dd1x7wc7y/image/upload/v1779793489/1-removebg-preview_rwymms.png" alt="" loading="lazy" class="w-12 opacity-70">
+                                <span class="text-[9px] uppercase tracking-widest text-on-surface-variant/60 font-bold">DSDC</span>
+                            </div>
+                            <img loading="lazy" alt="Safikul Islam Shawon" src="images/founders/Shawon.jpeg" onerror="this.style.display='none'" class="image-zoom relative w-full h-full object-cover transition-all duration-500">
+                        </div>
+                        <div class="px-2 pb-2 flex flex-col flex-grow">
+                            <span class="text-secondary text-[9px] md:text-[10px] uppercase tracking-widest mb-1 font-bold block">Founder</span>
+                            <h3 class="text-on-surface text-lg md:text-xl mb-1.5 font-bold">Safikul Islam Shawon</h3>
+                        </div>
+                    </div>
+
+                    <!-- Aurgho Aurpon -->
+                    <div class="member-card border-draw group glass-card rounded-2xl overflow-hidden flex flex-col shadow-2xl p-4">
+                        <div class="aspect-[4/5] overflow-hidden mb-4 rounded-xl bg-surface-container-lowest relative">
+                            <div class="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                                <img src="https://res.cloudinary.com/dd1x7wc7y/image/upload/v1779793489/1-removebg-preview_rwymms.png" alt="" loading="lazy" class="w-12 opacity-70">
+                                <span class="text-[9px] uppercase tracking-widest text-on-surface-variant/60 font-bold">DSDC</span>
+                            </div>
+                            <img loading="lazy" alt="Aurgho Aurpon" src="images/founders/Aurpon.jpeg" onerror="this.style.display='none'" class="image-zoom relative w-full h-full object-cover transition-all duration-500">
+                        </div>
+                        <div class="px-2 pb-2 flex flex-col flex-grow">
+                            <span class="text-secondary text-[9px] md:text-[10px] uppercase tracking-widest mb-1 font-bold block">Founder</span>
+                            <h3 class="text-on-surface text-lg md:text-xl mb-1.5 font-bold">Aurgho Aurpon</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Speech block rendered by JS from FOUNDER_SPEECH (hidden while empty) -->
+                <div id="founders-speech-slot"></div>
+            </div>
+        </div>
+
+        <!-- LEADERS — SCHOOL PANEL SUBPAGE -->
+        <div id="page-school-panel" class="page hidden bg-[#081425] bg-mesh overflow-hidden relative min-h-screen" tabindex="-1">
+            <div class="nebula-blob bg-[#00a6fb]/10 top-[-15%] left-[-10%]"></div>
+            <div class="nebula-blob bg-[#e9c400]/5 bottom-[-15%] right-[-10%]" style="animation-delay: -5s;"></div>
+            <div class="floating-bg-text top-40 -left-20">LEADERSHIP</div>
+            <div class="floating-bg-text bottom-40 -right-20">EXCELLENCE</div>
+            <section class="pt-20 md:pt-24 pb-8 px-4 sm:px-6 md:px-16 max-w-7xl mx-auto text-center relative z-10">
+                <div class="max-w-3xl mx-auto">
+                    <span class="text-[#94ccff] font-label-caps text-[10px] md:text-xs uppercase tracking-[0.3em] mb-3 block font-extrabold">The Leadership</span>
+                    <h1 class="text-3xl sm:text-5xl md:text-7xl text-white tracking-tight leading-none mb-4 md:mb-6 font-black italic uppercase px-6">SCHOOL <span class="text-gradient-cyan glow-cyan block md:inline">PANEL</span></h1>
+                    <div class="w-24 md:w-32 h-1 bg-gradient-to-r from-transparent via-primary-container to-transparent mx-auto rounded-full blur-[1px] mb-6 md:mb-8"></div>
+                    <p class="text-on-surface-variant text-sm md:text-lg leading-relaxed max-w-2xl mx-auto">Coming soon</p>
+                </div>
+            </section>
+            <div class="inner-page-content max-w-7xl mx-auto px-4 md:px-margin-desktop relative z-10 pb-16 md:pb-24">
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-8 max-w-md sm:max-w-none mx-auto w-full">
+                    <!-- Add school panel cards here — same style as the Executive cards (photo, name, role, short description) -->
+                </div>
+            </div>
+        </div>
+
         <!-- EVENTS SUBPAGE -->
         <div id="page-events" class="page hidden bg-[#0b1229] text-on-surface relative overflow-hidden bg-mesh min-h-screen" tabindex="-1">
             <!-- Atmospheric Background Elements -->
@@ -2053,126 +2472,14 @@
                                 </h2>
                                 <div class="w-24 md:w-32 h-1 bg-gradient-to-r from-primary-container to-transparent rounded-full mx-auto md:mx-0"></div>
                             </div>
-                            <button onclick="showPage('page-contact');" class="magnetic-btn mt-6 md:mt-0 px-6 py-3 md:py-3.5 glass-card text-[#94ccff] border border-[#94ccff]/30 hover:border-[#94ccff] hover:bg-[#94ccff]/10 transition-all flex items-center gap-3 font-label-md text-[10px] md:text-xs group rounded-xl uppercase tracking-[0.2em] shadow-lg w-full sm:w-auto justify-center">
+                            <a href="#archive" class="magnetic-btn mt-6 md:mt-0 px-6 py-3 md:py-3.5 glass-card text-[#94ccff] border border-[#94ccff]/30 hover:border-[#94ccff] hover:bg-[#94ccff]/10 transition-all flex items-center gap-3 font-label-md text-[10px] md:text-xs group rounded-xl uppercase tracking-[0.2em] shadow-lg w-full sm:w-auto justify-center">
                                 Explore Archive 
                                 <span class="material-symbols-outlined group-hover:translate-x-2 transition-transform">arrow_right_alt</span>
-                            </button>
+                            </a>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10 items-stretch max-w-md sm:max-w-none mx-auto w-full">
-                            <!-- Event Card 1 -->
-                            <div class="group reveal active flex flex-col h-full">
-                                <div class="relative glass-card backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-3xl overflow-hidden transition-all duration-700 hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(0,166,251,0.2)] hover:border-primary/40 group flex flex-col h-full">
-                                    <div class="w-full aspect-[16/9] overflow-hidden bg-[#0b1229] relative">
-                                        <img loading="lazy" alt="10th DSDC TAKEOFF" class="w-full h-full object-cover object-center scale-110 group-hover:scale-100 transition-all duration-1000" src="https://res.cloudinary.com/dd1x7wc7y/image/upload/v1780326094/WhatsApp_Image_2026-06-01_at_2.05.40_PM_jxx0we.jpg">
-                                        <div class="absolute inset-0 bg-gradient-to-t from-[#0b1229] via-[#0b1229]/60 to-transparent"></div>
-                                        <div class="absolute top-4 left-4 md:top-6 md:left-6">
-                                            <span class="px-2.5 py-0.5 md:px-3 md:py-1 bg-[#00a6fb]/20 backdrop-blur-md border border-[#00a6fb]/30 text-[#94ccff] text-[9px] md:text-[10px] font-bold rounded-full uppercase tracking-widest">TAKEOFF</span>
-                                        </div>
-                                    </div>
-                                    <div class="p-6 md:p-8 bg-[#181e36]/50 flex flex-col flex-grow justify-between text-left">
-                                        <div>
-                                            <h4 class="text-lg md:text-xl text-on-surface font-black mb-1.5 tracking-tight uppercase group-hover:text-[#00a6fb] transition-colors leading-tight">10th DSDC TAKEOFF</h4>
-                                            <p class="text-on-surface-variant text-[10px] md:text-xs uppercase tracking-wider opacity-60">Flagship Debate Championship</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Event Card 2 -->
-                            <div class="group reveal active flex flex-col h-full">
-                                <div class="relative glass-card backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-3xl overflow-hidden transition-all duration-700 hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(0,166,251,0.2)] hover:border-primary/40 group flex flex-col h-full">
-                                    <div class="w-full aspect-[16/9] overflow-hidden bg-[#0b1229] relative">
-                                        <img loading="lazy" alt="DSDC BATTLE GROUNDS 1.0" class="w-full h-full object-cover object-center scale-110 group-hover:scale-100 transition-all duration-1000" src="https://res.cloudinary.com/dd1x7wc7y/image/upload/v1780326175/WhatsApp_Image_2026-06-01_at_2.03.15_PM_rkmljf.jpg">
-                                        <div class="absolute inset-0 bg-gradient-to-t from-[#0b1229] via-[#0b1229]/60 to-transparent"></div>
-                                        <div class="absolute top-4 left-4 md:top-6 md:left-6">
-                                            <span class="px-2.5 py-0.5 md:px-3 md:py-1 bg-[#00a6fb]/20 backdrop-blur-md border border-[#00a6fb]/30 text-[#94ccff] text-[9px] md:text-[10px] font-bold rounded-full uppercase tracking-widest">BATTLEGROUNDS</span>
-                                        </div>
-                                    </div>
-                                    <div class="p-6 md:p-8 bg-[#181e36]/50 flex flex-col flex-grow justify-between text-left">
-                                        <div>
-                                            <h4 class="text-lg md:text-xl text-on-surface font-black mb-1.5 tracking-tight uppercase group-hover:text-[#00a6fb] transition-colors leading-tight">DSDC BATTLE GROUNDS 1.0</h4>
-                                            <p class="text-on-surface-variant text-[10px] md:text-xs uppercase tracking-wider opacity-60">Elite Arena Debates</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Event Card 3 -->
-                            <div class="group reveal active flex flex-col h-full">
-                                <div class="relative glass-card backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-3xl overflow-hidden transition-all duration-700 hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(0,166,251,0.2)] hover:border-primary/40 group flex flex-col h-full">
-                                    <div class="w-full aspect-[16/9] overflow-hidden bg-[#0b1229] relative">
-                                        <img loading="lazy" alt="9TH DSDC TAKEOFF" class="w-full h-full object-cover object-center scale-110 group-hover:scale-100 transition-all duration-1000" src="https://res.cloudinary.com/dd1x7wc7y/image/upload/v1780326176/WhatsApp_Image_2026-06-01_at_2.00.53_PM_knzpy1.jpg">
-                                        <div class="absolute inset-0 bg-gradient-to-t from-[#0b1229] via-[#0b1229]/60 to-transparent"></div>
-                                        <div class="absolute top-4 left-4 md:top-6 md:left-6">
-                                            <span class="px-2.5 py-0.5 md:px-3 md:py-1 bg-[#00a6fb]/20 backdrop-blur-md border border-[#00a6fb]/30 text-[#94ccff] text-[9px] md:text-[10px] font-bold rounded-full uppercase tracking-widest">TAKEOFF</span>
-                                        </div>
-                                    </div>
-                                    <div class="p-6 md:p-8 bg-[#181e36]/50 flex flex-col flex-grow justify-between text-left">
-                                        <div>
-                                            <h4 class="text-lg md:text-xl text-on-surface font-black mb-1.5 tracking-tight uppercase group-hover:text-[#00a6fb] transition-colors leading-tight">9TH DSDC TAKEOFF</h4>
-                                            <p class="text-on-surface-variant text-[10px] md:text-xs uppercase tracking-wider opacity-60">Legacy Championship</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Event Card 4 -->
-                            <div class="group reveal active flex flex-col h-full">
-                                <div class="relative glass-card backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-3xl overflow-hidden transition-all duration-700 hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(0,166,251,0.2)] hover:border-primary/40 group flex flex-col h-full">
-                                    <div class="w-full aspect-[16/9] overflow-hidden bg-[#0b1229] relative">
-                                        <img loading="lazy" alt="অমর একুশে বাগ্মিতা ১.০" class="w-full h-full object-cover object-center scale-110 group-hover:scale-100 transition-all duration-1000" src="https://res.cloudinary.com/dd1x7wc7y/image/upload/v1780326176/WhatsApp_Image_2026-06-01_at_1.59.15_PM_ig2x63.jpg">
-                                        <div class="absolute inset-0 bg-gradient-to-t from-[#0b1229] via-[#0b1229]/60 to-transparent"></div>
-                                        <div class="absolute top-4 left-4 md:top-6 md:left-6">
-                                            <span class="px-2.5 py-0.5 md:px-3 md:py-1 bg-[#00a6fb]/20 backdrop-blur-md border border-[#00a6fb]/30 text-[#94ccff] text-[9px] md:text-[10px] font-bold rounded-full uppercase tracking-widest">বাগ্মিতা</span>
-                                        </div>
-                                    </div>
-                                    <div class="p-6 md:p-8 bg-[#181e36]/50 flex flex-col flex-grow justify-between text-left">
-                                        <div>
-                                            <h4 class="text-lg md:text-xl text-on-surface font-black mb-1.5 tracking-tight uppercase group-hover:text-[#00a6fb] transition-colors leading-tight">অমর একুশে বাগ্মিতা ১.০</h4>
-                                            <p class="text-on-surface-variant text-[10px] md:text-xs uppercase tracking-wider opacity-60">Cultural Oratory Tournament</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Event Card 5 -->
-                            <div class="group reveal active flex flex-col h-full">
-                                <div class="relative glass-card backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-3xl overflow-hidden transition-all duration-700 hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(0,166,251,0.2)] hover:border-primary/40 group flex flex-col h-full">
-                                    <div class="w-full aspect-[16/9] overflow-hidden bg-[#0b1229] relative">
-                                        <img loading="lazy" alt="8th DSDC TAKEOFF" class="w-full h-full object-cover object-center scale-110 group-hover:scale-100 transition-all duration-1000" src="https://res.cloudinary.com/dd1x7wc7y/image/upload/v1780326177/WhatsApp_Image_2026-06-01_at_2.01.34_PM_geuhcm.jpg">
-                                        <div class="absolute inset-0 bg-gradient-to-t from-[#0b1229] via-[#0b1229]/60 to-transparent"></div>
-                                        <div class="absolute top-4 left-4 md:top-6 md:left-6">
-                                            <span class="px-2.5 py-0.5 md:px-3 md:py-1 bg-[#00a6fb]/20 backdrop-blur-md border border-[#00a6fb]/30 text-[#94ccff] text-[9px] md:text-[10px] font-bold rounded-full uppercase tracking-widest">TAKEOFF</span>
-                                        </div>
-                                    </div>
-                                    <div class="p-6 md:p-8 bg-[#181e36]/50 flex flex-col flex-grow justify-between text-left">
-                                        <div>
-                                            <h4 class="text-lg md:text-xl text-on-surface font-black mb-1.5 tracking-tight uppercase group-hover:text-[#00a6fb] transition-colors leading-tight">8th DSDC TAKEOFF</h4>
-                                            <p class="text-on-surface-variant text-[10px] md:text-xs uppercase tracking-wider opacity-60">Legacy Championship</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Event Card 6 -->
-                            <div class="group reveal active flex flex-col h-full">
-                                <div class="relative glass-card backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-3xl overflow-hidden transition-all duration-700 hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(0,166,251,0.2)] hover:border-primary/40 group flex flex-col h-full">
-                                    <div class="w-full aspect-[16/9] overflow-hidden bg-[#0b1229] relative">
-                                        <img loading="lazy" alt="DSDC NATIONALS 2023" class="w-full h-full object-cover object-center scale-110 group-hover:scale-100 transition-all duration-1000" src="https://res.cloudinary.com/dd1x7wc7y/image/upload/v1780326176/WhatsApp_Image_2026-06-01_at_2.01.33_PM_fhfyxi.jpg">
-                                        <div class="absolute inset-0 bg-gradient-to-t from-[#0b1229] via-[#0b1229]/20 to-transparent"></div>
-                                        <div class="absolute top-4 left-4 md:top-6 md:left-6">
-                                            <span class="px-2.5 py-0.5 md:px-3 md:py-1 bg-[#00a6fb]/20 backdrop-blur-md border border-[#00a6fb]/30 text-[#94ccff] text-[9px] md:text-[10px] font-bold rounded-full uppercase tracking-widest">NATIONALS</span>
-                                        </div>
-                                    </div>
-                                    <div class="p-6 md:p-8 bg-[#181e36]/50 flex flex-col flex-grow justify-between text-left">
-                                        <div>
-                                            <h4 class="text-lg md:text-xl text-on-surface font-black mb-1.5 tracking-tight uppercase group-hover:text-[#00a6fb] transition-colors leading-tight">DSDC NATIONALS 2023</h4>
-                                            <p class="text-on-surface-variant text-[10px] md:text-xs uppercase tracking-wider opacity-60">Premier Debate Circuit</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                        <!-- Past Events — cards are rendered by JS from the PAST_EVENTS array (see the script at the bottom of this file) -->
+                        <div id="past-events-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10 items-stretch max-w-md sm:max-w-none mx-auto w-full">
                         </div>
                     </div>
                 </section>
@@ -2186,7 +2493,6 @@
                                 <h2 class="text-3xl sm:text-4xl md:text-5xl text-white font-black italic uppercase tracking-tighter">Latest <span class="text-gradient-cyan glow-cyan">Updates</span></h2>
                                 <div class="w-20 h-1 bg-gradient-to-r from-primary-container to-transparent rounded-full mx-auto md:mx-0 mt-3"></div>
                             </div>
-                            <p class="text-on-surface-variant text-xs md:text-sm mt-4 md:mt-0 max-w-sm">Curated by the Admin Panel — replaces hardcoded news.</p>
                         </div>
                         <div id="home-updates-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                             <!-- JS will inject site_updates here -->
@@ -2239,6 +2545,32 @@
             <div class="inner-page-content max-w-7xl mx-auto px-4 sm:px-6 md:px-16 relative z-10 pb-16 md:pb-24">
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10 items-start max-w-md sm:max-w-none mx-auto w-full">
                     
+                    <!-- Achievement — 6th MSCDC -->
+                    <div class="group reveal flex flex-col h-auto">
+                        <div class="relative glass-card backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-3xl overflow-hidden transition-all duration-700 hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(0,166,251,0.2)] hover:border-primary/40 group">
+                            <div class="w-full aspect-square overflow-hidden bg-[#050b18] relative">
+                                <img loading="lazy" alt="DSDC achievement" onerror="this.style.display='none'" class="w-full h-full block object-cover object-center transition-all duration-1000 scale-100 group-hover:scale-[1.03]" src="images/achievements/6thmscdc.jpeg">
+                                <div class="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-black/60 to-transparent pointer-events-none"></div>
+                                <div class="absolute top-4 left-4 md:top-6 md:left-6">
+                                    <span class="px-2.5 py-0.5 md:px-3 md:py-1 bg-[#00a6fb]/20 backdrop-blur-md border border-[#00a6fb]/30 text-[#94ccff] text-[9px] md:text-[10px] font-bold rounded-full uppercase tracking-widest">CHAMPIONS</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Achievement — rahim -->
+                    <div class="group reveal flex flex-col h-auto">
+                        <div class="relative glass-card backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-3xl overflow-hidden transition-all duration-700 hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(0,166,251,0.2)] hover:border-primary/40 group">
+                            <div class="w-full aspect-square overflow-hidden bg-[#050b18] relative">
+                                <img loading="lazy" alt="DSDC achievement" onerror="this.style.display='none'" class="w-full h-full block object-cover object-center transition-all duration-1000 scale-100 group-hover:scale-[1.03]" src="images/achievements/rahim.jpeg">
+                                <div class="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-black/60 to-transparent pointer-events-none"></div>
+                                <div class="absolute top-4 left-4 md:top-6 md:left-6">
+                                    <span class="px-2.5 py-0.5 md:px-3 md:py-1 bg-[#00a6fb]/20 backdrop-blur-md border border-[#00a6fb]/30 text-[#94ccff] text-[9px] md:text-[10px] font-bold rounded-full uppercase tracking-widest">CHAMPIONS</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Achievement Card 1 -->
                     <div class="group reveal flex flex-col h-auto">
                         <div class="relative glass-card backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-3xl overflow-hidden transition-all duration-700 hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(0,166,251,0.2)] hover:border-primary/40 group">
@@ -2451,29 +2783,15 @@
                     <a href="https://www.instagram.com/dsdc_official_?igsi=eHE3eGdna29mdHd6" target="_blank" rel="noopener noreferrer" class="social-link px-3 py-1.5 md:px-4 md:py-2 border border-outline-variant/30 rounded-lg hover:text-secondary hover:border-secondary transition-colors text-[9px] md:text-[10px] font-bold tracking-widest uppercase">Instagram</a>
                     <a href="https://www.youtube.com/@DSDC-YT" target="_blank" rel="noopener noreferrer" class="social-link px-3 py-1.5 md:px-4 md:py-2 border border-outline-variant/30 rounded-lg hover:text-secondary hover:border-secondary transition-colors text-[9px] md:text-[10px] font-bold tracking-widest uppercase">YouTube</a>
                 </div>
+
+                <!-- Admin Login (admins log in from here — no Log in link in the top panel) -->
+                <div class="mt-5 text-center">
+                    <a href="#login" class="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant/60 hover:text-primary transition-all">Admin Login</a>
+                </div>
             </div>
         </div>
 
-        <!-- COMMUNITY — debater-only (replaces Contact in nav for role='debater') -->
-        <div id="page-community" class="page hidden bg-[#0b1229] bg-mesh overflow-hidden relative min-h-screen" tabindex="-1">
-            <div class="nebula-blob bg-[#00a6fb]/10 top-[-15%] left-[-10%]"></div>
-            <div class="nebula-blob bg-[#25D366]/5 bottom-[-15%] right-[-10%]"></div>
-            <div class="floating-bg-text top-40 -left-20">COMMUNITY</div>
-            <div class="floating-bg-text bottom-40 -right-20">CONNECT</div>
-            <div class="relative z-10 max-w-3xl mx-auto px-4 py-12 md:py-16">
-                <div class="text-center mb-8">
-                    <span class="text-[#94ccff] tracking-[0.3em] uppercase text-[10px] md:text-xs font-extrabold">Debaters Only</span>
-                    <h1 class="text-3xl md:text-5xl text-white font-black italic uppercase tracking-tighter mt-2">Join the <span class="text-gradient-cyan">Community</span></h1>
-                    <p class="text-on-surface-variant text-xs md:text-sm mt-3 max-w-xl mx-auto">Connect with fellow debaters. Choose your group — WhatsApp or Messenger. Links are placeholders until real invites are added.</p>
-                </div>
-                <div id="community-list" class="grid gap-4 md:gap-5">
-                    <!-- JS injects COMMUNITY_LINKS here -->
-                </div>
-                <p class="text-center text-[10px] text-on-surface-variant/50 mt-6">Admins see the regular Contact page in this nav slot.</p>
-            </div>
-        </div>
-
-        <!-- AUTH PAGE — Login / Signup (Part 2) -->
+        <!-- AUTH PAGE — Admin Login only (Part 2) -->
         <div id="page-auth" class="page hidden bg-[#0b1229] bg-mesh overflow-hidden relative min-h-screen" tabindex="-1">
             <div class="nebula-blob bg-[#00a6fb]/10 top-[-15%] left-[-10%]"></div>
             <div class="nebula-blob bg-[#e9c400]/5 bottom-[-15%] right-[-10%]"></div>
@@ -2485,18 +2803,9 @@
                     <h1 id="auth-title" class="text-3xl md:text-4xl text-white font-black italic uppercase tracking-tighter mt-2">Log in</h1>
                     <div class="w-16 h-0.5 bg-gradient-to-r from-primary-container to-transparent mx-auto mt-3 rounded-full"></div>
                 </div>
-                <!-- Toggle -->
-                <div class="flex glass-card rounded-full p-1 mb-6 border border-white/5 max-w-xs mx-auto">
-                    <button id="auth-tab-login" onclick="switchAuthMode('login')" class="flex-1 py-2 rounded-full bg-primary-container text-on-primary font-black text-xs uppercase tracking-widest transition-all">Log in</button>
-                    <button id="auth-tab-signup" onclick="switchAuthMode('signup')" class="flex-1 py-2 rounded-full text-on-surface-variant font-bold text-xs uppercase tracking-widest hover:text-white transition-all">Sign up</button>
-                </div>
                 <!-- Form -->
                 <div class="glass-card rounded-2xl p-6 md:p-8 border border-white/10 shadow-2xl">
                     <form id="auth-form" onsubmit="handleAuth(event)" class="flex flex-col gap-4">
-                        <div id="auth-fullname-wrap" class="hidden flex-col gap-1">
-                            <label class="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">Full name</label>
-                            <input id="auth-fullname" type="text" placeholder="e.g., Rahat Khan" class="bg-[#181e36] border border-outline-variant/30 p-3.5 rounded-xl text-white placeholder-on-surface-variant/50 text-sm focus:outline-none focus:border-primary transition-all">
-                        </div>
                         <div class="flex flex-col gap-1">
                             <label class="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">Email</label>
                             <input id="auth-email" type="email" placeholder="you@example.com" required class="bg-[#181e36] border border-outline-variant/30 p-3.5 rounded-xl text-white placeholder-on-surface-variant/50 text-sm focus:outline-none focus:border-primary transition-all">
@@ -2525,8 +2834,7 @@
             <div class="floating-bg-text top-40 -left-20">COURSES</div>
             <div class="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 md:px-16 py-8 md:py-12">
                 <div class="text-center mb-8">
-                    <span class="text-[#94ccff] tracking-[0.3em] uppercase text-[10px] md:text-xs font-extrabold">Members Only</span>
-                    <h1 class="text-3xl md:text-5xl text-white font-black italic uppercase tracking-tighter mt-2">Courses</h1>
+                    <h1 class="text-3xl md:text-5xl text-white font-black italic uppercase tracking-tighter">Courses</h1>
                     <p class="text-on-surface-variant text-xs md:text-sm mt-2">Structured debate curriculum — explore all levels</p>
                 </div>
                 <!-- Level switcher — Beginner / Advanced / English Wing (English Wing is a separate content category, not a skill tier) -->
@@ -2534,11 +2842,6 @@
                     <button data-level="beginner" onclick="switchCourseLevel('beginner')" class="course-level-btn active px-6 py-2.5 rounded-full bg-primary-container text-on-primary font-black text-xs uppercase tracking-widest transition-all">Beginner</button>
                     <button data-level="advanced" onclick="switchCourseLevel('advanced')" class="course-level-btn px-6 py-2.5 rounded-full glass-card border border-white/10 text-on-surface-variant font-bold text-xs uppercase tracking-widest hover:bg-white/5 transition-all">Advanced</button>
                     <button data-level="english_wing" onclick="switchCourseLevel('english_wing')" class="course-level-btn px-6 py-2.5 rounded-full glass-card border border-white/10 text-on-surface-variant font-bold text-xs uppercase tracking-widest hover:bg-white/5 transition-all">English Wing</button>
-                </div>
-                <!-- Login prompt (shown when not logged in and somehow on page) -->
-                <div id="courses-login-prompt" class="hidden glass-card rounded-2xl p-8 border border-white/5 text-center mb-8">
-                    <p class="text-on-surface-variant text-sm">Please log in to view courses.</p>
-                    <a href="#" onclick="showPage('page-auth'); return false;" class="inline-block mt-4 px-6 py-3 bg-primary-container text-on-primary font-black rounded-xl text-xs uppercase tracking-widest">Log in</a>
                 </div>
                 <!-- Empty state -->
                 <div id="courses-empty" class="hidden glass-card rounded-2xl p-8 border border-white/5 text-center">
@@ -2563,7 +2866,6 @@
                 <div class="flex gap-2 md:gap-3 justify-center flex-wrap mb-8">
                     <button onclick="switchAdminTab('submissions')" id="admin-tab-submissions" class="admin-tab active px-4 md:px-6 py-2.5 rounded-full bg-primary-container text-on-primary font-black text-[10px] md:text-xs uppercase tracking-widest">Contact Submissions</button>
                     <button onclick="switchAdminTab('updates')" id="admin-tab-updates" class="admin-tab px-4 md:px-6 py-2.5 rounded-full glass-card border border-white/10 text-on-surface-variant font-bold text-[10px] md:text-xs uppercase tracking-widest hover:bg-white/5">Site Updates</button>
-                    <button onclick="switchAdminTab('community')" id="admin-tab-community" class="admin-tab px-4 md:px-6 py-2.5 rounded-full glass-card border border-white/10 text-on-surface-variant font-bold text-[10px] md:text-xs uppercase tracking-widest hover:bg-white/5">Community</button>
                     <button onclick="switchAdminTab('courses')" id="admin-tab-courses" class="admin-tab px-4 md:px-6 py-2.5 rounded-full glass-card border border-white/10 text-on-surface-variant font-bold text-[10px] md:text-xs uppercase tracking-widest">Courses</button>
                     <button onclick="switchAdminTab('forms')" id="admin-tab-forms" class="admin-tab px-4 md:px-6 py-2.5 rounded-full glass-card border border-white/10 text-on-surface-variant font-bold text-[10px] md:text-xs uppercase tracking-widest opacity-60">Forms (coming soon)</button>
                 </div>
@@ -2628,53 +2930,6 @@
                     </div>
                 </div>
 
-                <!-- Community manager — admin-editable WhatsApp/Messenger links (same pattern as Site Updates) -->
-                <div id="admin-panel-community" class="admin-panel hidden">
-                    <div class="grid md:grid-cols-2 gap-6 md:gap-8">
-                        <div class="glass-card rounded-2xl p-6 border border-white/10">
-                            <h3 id="community-form-title" class="text-white font-black uppercase tracking-widest text-xs mb-4">Add community link</h3>
-                            <form id="community-form" onsubmit="handleCommunitySubmit(event)" class="flex flex-col gap-3">
-                                <input type="hidden" id="community-edit-id">
-                                <div class="flex flex-col gap-1">
-                                    <label class="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">Label</label>
-                                    <input id="community-label" type="text" required placeholder="e.g., General Group" class="bg-[#181e36] border border-outline-variant/30 p-3 rounded-xl text-white text-sm focus:outline-none focus:border-primary">
-                                </div>
-                                <div class="flex flex-col gap-1">
-                                    <label class="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">Platform</label>
-                                    <select id="community-platform" required class="bg-[#181e36] border border-outline-variant/30 p-3 rounded-xl text-white text-sm focus:outline-none focus:border-primary">
-                                        <option value="whatsapp">WhatsApp</option>
-                                        <option value="messenger">Messenger</option>
-                                    </select>
-                                </div>
-                                <div class="flex flex-col gap-1">
-                                    <label class="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">Invite URL</label>
-                                    <input id="community-url" type="text" required placeholder="https://chat.whatsapp.com/... or PASTE_*_LINK_HERE_*" class="bg-[#181e36] border border-outline-variant/30 p-3 rounded-xl text-white text-sm focus:outline-none focus:border-primary">
-                                </div>
-                                <div class="flex flex-col gap-1">
-                                    <label class="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">Cover image URL (optional)</label>
-                                    <input id="community-cover" type="text" placeholder="https://.../image.jpg — leave empty for icon" class="bg-[#181e36] border border-outline-variant/30 p-3 rounded-xl text-white text-sm focus:outline-none focus:border-primary">
-                                </div>
-                                <div class="flex flex-col gap-1">
-                                    <label class="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">Order (0 = first)</label>
-                                    <input id="community-order" type="number" value="0" min="0" step="1" class="bg-[#181e36] border border-outline-variant/30 p-3 rounded-xl text-white text-sm focus:outline-none focus:border-primary">
-                                </div>
-                                <p id="community-error" class="hidden text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg p-2"></p>
-                                <div class="flex gap-2">
-                                    <button type="submit" id="community-submit-btn" class="flex-1 py-3 bg-[#00a6fb] text-white font-black uppercase tracking-widest text-xs rounded-xl">Add</button>
-                                    <button type="button" onclick="resetCommunityForm()" class="px-4 py-3 glass-card border border-white/10 rounded-xl text-xs uppercase tracking-widest font-bold hover:bg-white/5">Cancel</button>
-                                </div>
-                                <p class="text-[10px] text-on-surface-variant/60">Same simple pattern as site_updates.image_url — paste URL, no file upload.</p>
-                            </form>
-                        </div>
-                        <div class="glass-card rounded-2xl p-6 border border-white/10">
-                            <h3 class="text-white font-black uppercase tracking-widest text-xs mb-4">Existing links</h3>
-                            <div id="community-list-admin" class="flex flex-col gap-3 max-h-[520px] overflow-y-auto pr-1">
-                                <p class="text-on-surface-variant text-sm">Loading…</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Courses manager — YouTube-only, leveled, ordered -->
                 <div id="admin-panel-courses" class="admin-panel hidden">
                     <div class="grid md:grid-cols-2 gap-6 md:gap-8">
@@ -2725,7 +2980,7 @@
                     <div class="glass-card rounded-2xl p-12 border border-white/10 text-center border-dashed">
                         <span class="material-symbols-outlined text-4xl text-on-surface-variant/40">description</span>
                         <h3 class="text-white font-black uppercase tracking-widest mt-3">Forms (coming soon)</h3>
-                        <p class="text-on-surface-variant text-sm mt-2">This slot will host the Form Builder in a later prompt.</p>
+                        <p class="text-on-surface-variant text-sm mt-2">Coming soon.</p>
                     </div>
                 </div>
             </div>
@@ -2771,16 +3026,16 @@
                 <div>
                     <h5 class="text-primary font-black text-[10px] md:text-xs mb-4 md:mb-8 uppercase tracking-[0.2em] md:tracking-[0.3em]">Organization</h5>
                     <ul class="flex flex-col gap-3 md:gap-4">
-                        <li><a class="text-on-surface-variant hover:text-primary transition-all text-[10px] md:text-xs uppercase tracking-widest font-black" href="#" onclick="showHome(); return false;">History</a></li>
-                        <li><a class="text-on-surface-variant hover:text-primary transition-all text-[10px] md:text-xs uppercase tracking-widest font-black" href="#" onclick="showPage('page-ec','xi'); return false;">Committee</a></li>
-                        <li><a class="text-on-surface-variant hover:text-primary transition-all text-[10px] md:text-xs uppercase tracking-widest font-black" href="#" onclick="showPage('page-achievements'); return false;">Achievements</a></li>
-                        <li><a class="text-on-surface-variant hover:text-primary transition-all text-[10px] md:text-xs uppercase tracking-widest font-black" href="#" onclick="showHome(); setTimeout(() =&gt; document.getElementById('about').scrollIntoView({behavior:'smooth'}), 150); return false;">About DSDC</a></li>
+                        <li><a class="text-on-surface-variant hover:text-primary transition-all text-[10px] md:text-xs uppercase tracking-widest font-black" href="#home">History</a></li>
+                        <li><a class="text-on-surface-variant hover:text-primary transition-all text-[10px] md:text-xs uppercase tracking-widest font-black" href="#leaders-executives/xi">Committee</a></li>
+                        <li><a class="text-on-surface-variant hover:text-primary transition-all text-[10px] md:text-xs uppercase tracking-widest font-black" href="#achievements">Achievements</a></li>
+                        <li><a class="text-on-surface-variant hover:text-primary transition-all text-[10px] md:text-xs uppercase tracking-widest font-black" href="#about-us">About DSDC</a></li>
                     </ul>
                 </div>
                 <div>
                     <h5 class="text-primary font-black text-[10px] md:text-xs mb-4 md:mb-8 uppercase tracking-[0.2em] md:tracking-[0.3em]">Support</h5>
                     <ul class="flex flex-col gap-3 md:gap-4">
-                        <li><a class="text-on-surface-variant hover:text-primary transition-all text-[10px] md:text-xs uppercase tracking-widest font-black" href="#" onclick="showPage('page-contact'); return false;">Contact Us</a></li>
+                        <li><a class="text-on-surface-variant hover:text-primary transition-all text-[10px] md:text-xs uppercase tracking-widest font-black" href="#contact">Contact Us</a></li>
                         <li><a class="text-on-surface-variant hover:text-primary transition-all text-[10px] md:text-xs uppercase tracking-widest font-black" href="#">Privacy Policy</a></li>
                         <li><a class="text-on-surface-variant hover:text-primary transition-all text-[10px] md:text-xs uppercase tracking-widest font-black" href="#">Sponsorships</a></li>
                     </ul>
@@ -2795,6 +3050,42 @@
 
     <!-- Toast container — glassmorphism, matches site style -->
     <div id="toast-container" class="fixed top-20 md:top-24 right-4 md:right-6 z-[200] flex flex-col gap-3 pointer-events-none"></div>
+
+    <!-- Join DSDC — wing-choice popup (shared modal system; wings built by JS from JOIN_FORMS) -->
+    <div id="join-modal" class="modal fixed inset-0 z-[100] p-4" role="dialog" aria-modal="true" aria-labelledby="join-modal-title">
+        <div class="modal-backdrop absolute inset-0 bg-[#040a18]/80 backdrop-blur-sm" data-modal-close></div>
+        <div class="modal-panel relative w-full max-w-md self-center glass-card border border-white/10 rounded-2xl md:rounded-3xl p-6 md:p-8 text-center">
+            <button type="button" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/5 border border-white/10 text-on-surface-variant hover:text-white hover:bg-white/10 transition-colors flex items-center justify-center cursor-pointer" data-modal-close aria-label="Close dialog">
+                <span class="material-symbols-outlined text-lg">close</span>
+            </button>
+            <h2 id="join-modal-title" class="text-2xl md:text-3xl text-white font-black italic uppercase tracking-tight mb-2">Join <span class="text-gradient-cyan">DSDC</span></h2>
+            <p class="text-on-surface-variant text-sm md:text-base mb-6 md:mb-8">Choose your wing</p>
+            <div id="join-wings" class="flex flex-col gap-3 md:gap-4 text-left"></div>
+        </div>
+    </div>
+
+    <!-- Moderator message popup (shared modal system) -->
+    <div id="speech-modal" class="modal fixed inset-0 z-[100] p-4" role="dialog" aria-modal="true" aria-labelledby="speech-modal-title">
+        <div class="modal-backdrop absolute inset-0 bg-[#040a18]/80 backdrop-blur-sm" data-modal-close></div>
+        <div class="modal-panel relative w-full max-w-lg self-center glass-card border border-white/10 rounded-2xl md:rounded-3xl p-6 md:p-8 flex flex-col" style="overflow: hidden;">
+            <button type="button" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/5 border border-white/10 text-on-surface-variant hover:text-white hover:bg-white/10 transition-colors flex items-center justify-center cursor-pointer" data-modal-close aria-label="Close message">
+                <span class="material-symbols-outlined text-lg">close</span>
+            </button>
+            <div class="flex items-center gap-4 mb-5 pr-10 shrink-0">
+                <div class="w-14 h-14 md:w-16 md:h-16 rounded-xl overflow-hidden bg-[#0b1229] border border-white/10 relative shrink-0">
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <img src="https://res.cloudinary.com/dd1x7wc7y/image/upload/v1779793489/1-removebg-preview_rwymms.png" alt="" loading="lazy" class="w-8 opacity-60">
+                    </div>
+                    <img id="speech-modal-photo" alt="" loading="lazy" onerror="this.style.display='none'" class="relative w-full h-full object-cover object-top">
+                </div>
+                <div class="text-left min-w-0">
+                    <h2 id="speech-modal-title" class="text-lg md:text-xl text-white font-black tracking-tight leading-tight"></h2>
+                    <p id="speech-modal-role" class="text-[10px] md:text-xs text-[#94ccff] uppercase tracking-widest font-bold mt-1"></p>
+                </div>
+            </div>
+            <div id="speech-modal-body" class="mod-speech-text text-sm md:text-base text-on-surface overflow-y-auto min-h-0" style="max-height: 55vh;"></div>
+        </div>
+    </div>
 
     <!-- Scripts Block -->
     <script>
@@ -2816,56 +3107,194 @@
                 a.classList.remove('text-primary', 'font-black', 'border-b-2', 'border-primary', 'pb-1');
                 a.classList.add('text-on-surface-variant');
             });
+            // Close the Leaders dropdown on navigation
+            const leadersWrap = document.getElementById('nav-leaders-wrap');
+            if (leadersWrap) leadersWrap.classList.remove('dd-open');
+        }
+
+        // ============================================================
+        // Hash routing — ONE showPage() for the whole site.
+        // Real hrefs (#events, #leaders-executives/xi, …) + hashchange make
+        // Back, Forward and Refresh land on the right page.
+        // ============================================================
+        const PAGE_HASH = {
+            'home': '',
+            'page-about': 'about-us',
+            'page-moderators': 'leaders-moderators',
+            'page-founders': 'leaders-founders',
+            'page-ec': 'leaders-executives',
+            'page-school-panel': 'leaders-school-panel',
+            'page-events': 'events',
+            'page-achievements': 'achievements',
+            'page-archive': 'archive',
+            'page-courses': 'courses',
+            'page-contact': 'contact',
+            'page-auth': 'login',
+            'page-admin': 'admin'
+        };
+        const HASH_PAGE = {
+            'home': 'home',
+            'about-us': 'page-about',
+            'leaders-moderators': 'page-moderators',
+            'leaders-founders': 'page-founders',
+            'leaders-executives': 'page-ec',
+            'leaders-school-panel': 'page-school-panel',
+            'events': 'page-events',
+            'achievements': 'page-achievements',
+            'archive': 'page-archive',
+            'courses': 'page-courses',
+            'contact': 'page-contact',
+            'login': 'page-auth',
+            'admin': 'page-admin'
+        };
+        const ACTIVE_LINK_MAP = {
+            'home': 'nav-link-home',
+            'page-about': 'nav-link-about',
+            'page-moderators': 'nav-link-leaders',
+            'page-founders': 'nav-link-leaders',
+            'page-ec': 'nav-link-leaders',
+            'page-school-panel': 'nav-link-leaders',
+            'page-events': 'nav-link-events',
+            'page-achievements': 'nav-link-achieve',
+            'page-archive': 'nav-link-archive',
+            'page-courses': 'nav-courses',
+            'page-contact': 'nav-link-contact'
+        };
+
+        // The session check must finish before #admin is decided, so an admin
+        // who refreshes on the Admin Panel is never kicked out.
+        let _markSessionReady;
+        const sessionReady = new Promise(resolve => { _markSessionReady = resolve; });
+        let _suppressHashChanges = 0; // showPage writes the hash itself — don't re-render twice
+
+        function hashFor(id, tab) {
+            if (!(id in PAGE_HASH)) return '';
+            const base = PAGE_HASH[id];
+            if (!base) return '';
+            if (id === 'page-ec' && tab) return '#' + base + '/' + tab;
+            return '#' + base;
         }
 
         function showHome() {
-            hideAll();
-            homePage.classList.remove('hidden');
-            setTimeout(() => {
-                homePage.classList.add('active-view');
-                homePage.focus(); // Set accessibility focus
-                requestAnimationFrame(updateInteractiveCache); // Recalculate coordinates cleanly
-            }, 50);
-            
-            const homeLink = document.getElementById('nav-link-home');
-            if (homeLink) {
-                homeLink.classList.add('text-primary', 'font-black', 'border-b-2', 'border-primary', 'pb-1');
-                homeLink.classList.remove('text-on-surface-variant');
-            }
-            window.scrollTo(0, 0);
-            reinitReveal();
+            renderPage('home');
+            syncHash('home');
         }
 
         function showPage(id, tab) {
+            if (id === 'page-admin') {
+                // Admin Panel: admins only — anyone else goes to the login page
+                sessionReady.then(() => {
+                    if (isAdmin()) {
+                        renderPage('page-admin');
+                        syncHash('page-admin');
+                    } else {
+                        renderPage('page-auth');
+                        setAuthError('Admin access only. Please log in with an admin account.');
+                        if (location.hash === '#admin') {
+                            history.replaceState(null, '', location.pathname + location.search + '#login');
+                        } else {
+                            _suppressHashChanges++;
+                            location.hash = 'login';
+                        }
+                    }
+                });
+                return;
+            }
+            renderPage(id, tab);
+            syncHash(id, tab);
+        }
+
+        function syncHash(id, tab) {
+            const want = hashFor(id, tab);
+            const cur = location.hash || '';
+            if (cur === want) return;
+            if (!want) { history.replaceState(null, '', location.pathname + location.search); return; }
+            _suppressHashChanges++;
+            location.hash = want.slice(1);
+        }
+
+        function routeFromHash() {
+            const raw = (location.hash || '').replace(/^#/, '');
+            if (!raw || raw === 'home') return showHome();
+            const parts = raw.split('/');
+            const id = HASH_PAGE[parts[0]];
+            if (!id) return showHome(); // unknown hash → Home
+            showPage(id, parts[1] || null);
+        }
+
+        window.addEventListener('hashchange', () => {
+            if (_suppressHashChanges > 0) { _suppressHashChanges--; return; }
+            routeFromHash();
+        });
+
+        function renderPage(id, tab) {
             hideAll();
-            const pg = document.getElementById(id);
-            if (pg) {
-                pg.classList.remove('hidden');
+            if (id === 'home') {
+                homePage.classList.remove('hidden');
                 setTimeout(() => {
-                    pg.classList.add('active-view');
-                    pg.focus(); // Set accessibility focus
+                    homePage.classList.add('active-view');
+                    homePage.focus({ preventScroll: true }); // Set accessibility focus (must not move the page)
                     requestAnimationFrame(updateInteractiveCache); // Recalculate coordinates cleanly
                 }, 50);
+            } else {
+                const pg = document.getElementById(id);
+                if (pg) {
+                    pg.classList.remove('hidden');
+                    setTimeout(() => {
+                        pg.classList.add('active-view');
+                        pg.focus({ preventScroll: true }); // Set accessibility focus (must not move the page)
+                        requestAnimationFrame(updateInteractiveCache); // Recalculate coordinates cleanly
+                    }, 50);
+                }
+                if (id === 'page-ec') {
+                    switchTab((tab && document.getElementById('tab-' + tab)) ? tab : 'xi');
+                }
+                if (id === 'page-courses') {
+                    setTimeout(() => { updateCoursesSwitcherVisibility(); loadCourses(); }, 80);
+                }
+                if (id === 'page-admin') {
+                    // Defer until the page is visible; only if the submissions panel is active (default tab)
+                    setTimeout(() => {
+                        const panel = document.getElementById('admin-panel-submissions');
+                        if (panel && !panel.classList.contains('hidden')) loadSubmissions();
+                    }, 120);
+                }
+                if (id === 'page-auth') {
+                    const err = document.getElementById('auth-error');
+                    const ok = document.getElementById('auth-success');
+                    if (err) err.classList.add('hidden');
+                    if (ok) ok.classList.add('hidden');
+                }
             }
-            if (tab && id === 'page-ec') switchTab(tab);
-            
             // Highlight link in nav
-            const activeLinkMap = {
-                'page-ec': 'nav-link-exec',
-                'page-events': 'nav-link-events',
-                'page-achievements': 'nav-link-achieve',
-                'page-debaters': 'nav-link-exec', // Highlight Executive parent link when visiting active speakers subpage
-                'page-contact': 'nav-link-contact'
-            };
-            const activeLinkId = activeLinkMap[id];
-            const activeLink = document.getElementById(activeLinkId);
+            const activeLink = document.getElementById(ACTIVE_LINK_MAP[id] || '');
             if (activeLink) {
                 activeLink.classList.add('text-primary', 'font-black', 'border-b-2', 'border-primary', 'pb-1');
                 activeLink.classList.remove('text-on-surface-variant');
             }
-            window.scrollTo(0, 0);
+            // Scroll to top (kills any in-flight smooth scroll so it can't drag the new page down)
+            if (window.scrollY > 0) window.scrollTo(0, 0);
+            else window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
             reinitReveal();
         }
+
+        function setAuthError(msg) {
+            const err = document.getElementById('auth-error');
+            if (err) { err.textContent = msg; err.classList.remove('hidden'); }
+        }
+
+        // Leaders dropdown (desktop): clicking LEADERS only opens/closes it
+        function toggleLeadersDropdown(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const wrap = document.getElementById('nav-leaders-wrap');
+            if (wrap) wrap.classList.toggle('dd-open');
+        }
+        document.addEventListener('click', e => {
+            const wrap = document.getElementById('nav-leaders-wrap');
+            if (!wrap || !wrap.classList.contains('dd-open')) return;
+            if (!wrap.contains(e.target)) wrap.classList.remove('dd-open');
+        });
 
         function switchTab(id, btn) {
             // Hide all panel elements
@@ -2894,6 +3323,9 @@
                     }
                 });
             }
+            // Keep the hash in sync so refresh keeps the selected session tab
+            const ecPage = document.getElementById('page-ec');
+            if (ecPage && !ecPage.classList.contains('hidden')) syncHash('page-ec', id);
         }
 
         // Direct mail dispatch handler
@@ -3179,11 +3611,6 @@
         let currentUser = null;
         let currentProfile = null; // {id, full_name, role, level}
 
-        // Community links — now fetched from Supabase community_links (admin-editable)
-        // Hardcoded fallback kept empty; see SQL seed above for initial 6 placeholder rows
-        // To edit: use Admin Panel → Community tab (or Supabase Table Editor)
-        let COMMUNITY_LINKS = [];
-
         // Reusable role gate — use for any section: requireRole('debater' | 'admin')
         function requireRole(role) {
             if (!currentUser || !currentProfile) return false;
@@ -3201,6 +3628,7 @@
         function friendlyAuthError(err) {
             if (!err) return "Something went wrong. Please try again.";
             const msg = (err.message || "").toLowerCase();
+            if (msg.includes("admin access only")) return "Admin access only.";
             if (msg.includes("invalid login") || msg.includes("invalid credentials") || msg.includes("email not confirmed")) return "Incorrect email or password. Please try again.";
             if (msg.includes("user already registered") || msg.includes("already exists")) return "An account with this email already exists. Try logging in.";
             if (msg.includes("password should be at least")) return "Password should be at least 6 characters.";
@@ -3225,93 +3653,19 @@
             }, 2600);
         }
 
-        function isStrictDebater() { return currentProfile?.role === 'debater'; }
-        function updateCommunityNav() {
-            // Debater + admin (any logged-in) see Community; visitor sees Contact
-            const isDeb = isDebater();
-            const desktop = document.getElementById('nav-link-contact');
-            const mobile = document.getElementById('mobile-nav-contact');
-            if (desktop) {
-                if (isDeb) {
-                    desktop.textContent = 'Community';
-                    desktop.setAttribute('onclick', "showPage('page-community'); return false;");
-                } else {
-                    desktop.textContent = 'Contact';
-                    desktop.setAttribute('onclick', "showPage('page-contact'); return false;");
-                }
-            }
-            if (mobile) {
-                if (isDeb) {
-                    mobile.textContent = 'Community';
-                    mobile.setAttribute('onclick', "showPage('page-community'); closeMobileMenu(); return false;");
-                } else {
-                    mobile.textContent = 'Contact Base';
-                    mobile.setAttribute('onclick', "showPage('page-contact'); closeMobileMenu(); return false;");
-                }
-            }
-        }
-        async function fetchCommunityLinks() {
-            if (!supabase) return [];
-            const { data, error } = await supabase.from('community_links').select('id,label,platform,url,cover_image_url,order,created_at').order('order', {ascending:true}).order('created_at', {ascending:true});
-            if (error) {
-                console.warn('community_links fetch', error);
-                return [];
-            }
-            return data || [];
-        }
-        async function renderCommunity() {
-            const list = document.getElementById('community-list');
-            if (!list) return;
-            list.innerHTML = '<p class="text-center text-on-surface-variant text-sm py-6">Loading community links…</p>';
-            // Fetch fresh from Supabase (any logged-in user can read)
-            if (supabase && currentUser) {
-                try {
-                    const data = await fetchCommunityLinks();
-                    if (data.length > 0) COMMUNITY_LINKS = data;
-                } catch(e) { console.warn(e); }
-            }
-            // If still empty (visitor not logged in or no rows), show placeholder message but keep static fallback empty
-            if (!COMMUNITY_LINKS || COMMUNITY_LINKS.length === 0) {
-                list.innerHTML = '<p class="text-center text-on-surface-variant text-sm py-6">No community links yet. Admins can add them via Admin Panel → Community.</p>';
-                return;
-            }
-            list.innerHTML = COMMUNITY_LINKS.map(entry => {
-                const isWA = entry.platform === 'whatsapp';
-                const accent = isWA ? 'border-[#25D366]/30 bg-[#25D366]/10 text-[#25D366]' : 'border-[#00B2FF]/30 bg-[#00B2FF]/10 text-[#00B2FF]';
-                const icon = isWA ? 'chat' : 'send';
-                const placeholder = (entry.url||'').includes('PASTE_');
-                const cover = entry.cover_image_url ? `<img src="${escapeHtml(entry.cover_image_url)}" alt="${escapeHtml(entry.label)}" class="w-10 h-10 rounded-full object-cover border ${accent} shrink-0">` : `<div class="w-10 h-10 rounded-full flex items-center justify-center border ${accent} shrink-0"><span class="material-symbols-outlined text-[20px]">${icon}</span></div>`;
-                return `
-                <a href="${placeholder ? '#' : escapeHtml(entry.url)}" ${placeholder ? 'onclick="event.preventDefault(); alert(\'Replace placeholder with real invite link for: \' + entry.label); return false;"' : 'target="_blank" rel="noopener noreferrer"'} class="group glass-card rounded-2xl p-5 md:p-6 border border-white/10 flex items-center justify-between gap-4 hover:border-primary/30 hover:bg-white/[0.04] transition-all">
-                    <div class="flex items-center gap-4">
-                        ${cover}
-                        <div class="text-left">
-                            <h3 class="text-white font-bold text-sm md:text-base leading-tight">${escapeHtml(entry.label)}</h3>
-                            <p class="text-[10px] uppercase tracking-widest font-bold ${isWA ? 'text-[#25D366]/70' : 'text-[#00B2FF]/70'}">${isWA ? 'WhatsApp' : 'Messenger'}${placeholder ? ' • placeholder' : ''}</p>
-                        </div>
-                    </div>
-                    <span class="material-symbols-outlined text-on-surface-variant group-hover:text-white group-hover:translate-x-1 transition-all">arrow_forward</span>
-                </a>`;
-            }).join('');
-        }
         function updateNavVisibility() {
             const loggedIn = !!currentUser;
-            const deb = isDebater();
             const admin = isAdmin();
-            // Desktop
-            const courses = document.getElementById('nav-courses');
+            // Desktop (no Log in link — admin login lives on the Contact page)
             const dropdownAdminLink = document.getElementById('dropdown-admin-link');
             const dropdownAdminSep = document.getElementById('dropdown-admin-separator');
             const mobileDropdownAdmin = document.getElementById('mobile-dropdown-admin-link');
-            const loginBtn = document.getElementById('nav-login-btn');
             const profileWrap = document.getElementById('nav-profile-wrap');
             const profileInitial = document.getElementById('nav-profile-initial');
             const profileName = document.getElementById('nav-profile-name');
-            if (courses) courses.classList.toggle('hidden', !deb);
             if (dropdownAdminLink) dropdownAdminLink.classList.toggle('hidden', !admin);
             if (dropdownAdminSep) dropdownAdminSep.classList.toggle('hidden', !admin);
             if (mobileDropdownAdmin) mobileDropdownAdmin.classList.toggle('hidden', !admin);
-            if (loginBtn) loginBtn.classList.toggle('hidden', loggedIn);
             if (profileWrap) profileWrap.classList.toggle('hidden', !loggedIn);
             if (loggedIn && profileInitial) {
                 const full = currentProfile?.full_name || currentUser?.email || 'U';
@@ -3327,17 +3681,11 @@
             }
             if (loggedIn && profileName) profileName.textContent = currentProfile?.full_name || currentUser?.email || '';
             if (!loggedIn) closeProfileDropdown();
-            // Mobile (simple: name + Log out directly, no popover)
-            const mCourses = document.getElementById('mobile-nav-courses');
-            const mLogin = document.getElementById('mobile-nav-login');
+            // Mobile (simple: name + Admin Panel + Log out directly, no popover)
             const mUser = document.getElementById('mobile-nav-user');
             const mUserName = document.getElementById('mobile-nav-user-name');
-            if (mCourses) mCourses.classList.toggle('hidden', !deb);
-            if (mLogin) mLogin.classList.toggle('hidden', loggedIn);
             if (mUser) { mUser.classList.toggle('hidden', !loggedIn); mUser.classList.toggle('flex', loggedIn); }
             if (mUserName && loggedIn) mUserName.textContent = currentProfile?.full_name || currentUser?.email || '';
-            updateCommunityNav();
-            renderCommunity();
         }
         function toggleProfileDropdown(e) {
             e.stopPropagation();
@@ -3399,33 +3747,7 @@
             loadHomeUpdates(); // always load feed (public)
         }
 
-        // Auth UI toggle
-        let authMode = 'login';
-        function switchAuthMode(mode) {
-            authMode = mode;
-            const tLogin = document.getElementById('auth-tab-login');
-            const tSignup = document.getElementById('auth-tab-signup');
-            const title = document.getElementById('auth-title');
-            const submit = document.getElementById('auth-submit');
-            const wrap = document.getElementById('auth-fullname-wrap');
-            const err = document.getElementById('auth-error');
-            const ok = document.getElementById('auth-success');
-            if (err) err.classList.add('hidden');
-            if (ok) ok.classList.add('hidden');
-            if (mode === 'login') {
-                tLogin.className = "flex-1 py-2 rounded-full bg-primary-container text-on-primary font-black text-xs uppercase tracking-widest transition-all";
-                tSignup.className = "flex-1 py-2 rounded-full text-on-surface-variant font-bold text-xs uppercase tracking-widest hover:text-white transition-all";
-                title.textContent = "Log in";
-                submit.textContent = "Log in";
-                wrap.classList.add('hidden'); wrap.classList.remove('flex');
-            } else {
-                tSignup.className = "flex-1 py-2 rounded-full bg-primary-container text-on-primary font-black text-xs uppercase tracking-widest transition-all";
-                tLogin.className = "flex-1 py-2 rounded-full text-on-surface-variant font-bold text-xs uppercase tracking-widest hover:text-white transition-all";
-                title.textContent = "Sign up";
-                submit.textContent = "Create account";
-                wrap.classList.remove('hidden'); wrap.classList.add('flex');
-            }
-        }
+        // Auth UI (login-only page — shows the logged-in card when a session exists)
         function updateAuthPageUI() {
             const logged = !!currentUser;
             const form = document.getElementById('auth-form');
@@ -3433,8 +3755,6 @@
             const nameEl = document.getElementById('auth-loggedin-name');
             const roleEl = document.getElementById('auth-loggedin-role');
             if (form) form.parentElement.classList.toggle('hidden', logged);
-            const toggle = document.querySelector('#page-auth .flex.glass-card.rounded-full');
-            if (toggle) toggle.classList.toggle('hidden', logged);
             const title = document.getElementById('auth-title');
             if (title && logged) title.textContent = "Welcome";
             if (loggedDiv) loggedDiv.classList.toggle('hidden', !logged);
@@ -3445,54 +3765,34 @@
             e.preventDefault();
             const email = document.getElementById('auth-email').value.trim();
             const pw = document.getElementById('auth-password').value;
-            const fullname = document.getElementById('auth-fullname').value.trim();
             const errEl = document.getElementById('auth-error');
             const okEl = document.getElementById('auth-success');
             const btn = document.getElementById('auth-submit');
             errEl.classList.add('hidden'); okEl.classList.add('hidden');
-            btn.disabled = true; btn.textContent = authMode === 'login' ? 'Logging in…' : 'Creating…';
+            btn.disabled = true; btn.textContent = 'Logging in…';
             try {
                 if (!supabase) throw new Error("Supabase not loaded");
-                if (authMode === 'signup') {
-                    if (!fullname) throw new Error("Please enter your full name.");
-                    const { data, error } = await supabase.auth.signUp({
-                        email, password: pw,
-                        options: { data: { full_name: fullname } }
-                    });
-                    if (error) throw error;
-                    // Email confirmation is disabled — signUp now returns an active session directly.
-                    // Check data.session (not just data.user) to confirm they are actually logged in.
-                    if (data.session) {
-                        // Reuse existing post-login session handling (same as signInWithPassword)
-                        currentUser = data.session.user || data.user;
-                        await fetchProfile();
-                        updateNavVisibility();
-                        updateAuthPageUI();
-                        showToast(`Welcome, ${currentProfile?.full_name || fullname || 'signed in!'}!`, 'success');
-                        okEl.textContent = "Welcome, signed in!";
-                        okEl.classList.remove('hidden');
-                        setTimeout(()=> showHome(), 600);
-                    } else {
-                        // Edge case: no session (e.g. confirmation re-enabled) — don't pretend logged in
-                        okEl.textContent = "Account created! Please log in to continue.";
-                        okEl.classList.remove('hidden');
-                        switchAuthMode('login');
-                    }
-                } else {
-                    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pw });
-                    if (error) throw error;
-                    currentUser = data.user;
-                    await fetchProfile();
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password: pw });
+                if (error) throw error;
+                currentUser = data.user;
+                await fetchProfile();
+                if (!isAdmin()) {
+                    // Not an admin → sign straight back out, never keep the session
+                    try { await supabase.auth.signOut(); } catch (e) { console.warn('signOut failed', e); }
+                    currentUser = null;
+                    currentProfile = null;
                     updateNavVisibility(); updateAuthPageUI();
-                    okEl.textContent = "Logged in successfully!";
-                    okEl.classList.remove('hidden');
-                    setTimeout(()=> showHome(), 600);
+                    throw new Error("Admin access only.");
                 }
+                updateNavVisibility(); updateAuthPageUI();
+                okEl.textContent = "Logged in successfully!";
+                okEl.classList.remove('hidden');
+                setTimeout(()=> showHome(), 600);
             } catch (err) {
                 errEl.textContent = friendlyAuthError(err);
                 errEl.classList.remove('hidden');
             } finally {
-                btn.disabled = false; btn.textContent = authMode === 'login' ? 'Log in' : 'Create account';
+                btn.disabled = false; btn.textContent = 'Log in';
             }
         }
         async function handleLogout() {
@@ -3511,75 +3811,12 @@
             currentProfile = null;
             closeProfileDropdown();
             closeMobileMenu();
-            // Nav back to "Log in", profile icon hidden, Courses/Admin/Community links hidden
+            // Profile icon hidden, Admin Panel links hidden
             updateNavVisibility();
             updateAuthPageUI();
-            // Leave whatever gated page was open (Courses/Admin/Community) and go home
+            // Leave the Admin Panel (or any other page) and go home
             showHome();
         }
-        function handleCoursesNav() {
-            if (!isDebater()) {
-                showPage('page-auth');
-                switchAuthMode('login');
-                const err = document.getElementById('auth-error');
-                if (err) { err.textContent = "Please log in with a debater account to view Courses."; err.classList.remove('hidden'); }
-                return false;
-            }
-            showPage('page-courses');
-            return false;
-        }
-        // Override showPage to protect admin + gate courses + auto-load admin submissions (Issue 3 fix)
-        const _origShowPage = window.showPage;
-        window.showPage = function(id, tab) {
-            // Gate admin
-            if (id === 'page-admin' && !isAdmin()) {
-                showPage('page-auth');
-                switchAuthMode('login');
-                const err = document.getElementById('auth-error');
-                if (err) { err.textContent = "Admin access only. Please log in with an admin account."; err.classList.remove('hidden'); }
-                return;
-            }
-            // Gate courses
-            if (id === 'page-courses' && !isDebater()) {
-                handleCoursesNav(); return;
-            }
-            // Gate community — debater + admin (any logged-in) see it; visitor redirect to Login
-            if (id === 'page-community' && !isDebater()) {
-                if (!currentUser) {
-                    showPage('page-auth');
-                    switchAuthMode('login');
-                    const err = document.getElementById('auth-error');
-                    if (err) { err.textContent = "Please log in to view the Community."; err.classList.remove('hidden'); }
-                } else {
-                    showPage('page-contact');
-                }
-                return;
-            }
-            // Call original and auto-load submissions when admin panel first opens (fix stuck "Loading…")
-            if (typeof _origShowPage === 'function') {
-                const ret = _origShowPage(id, tab);
-                if (id === 'page-admin') {
-                    // Defer until page is visible; only if submissions panel is active (default tab)
-                    setTimeout(() => {
-                        const panel = document.getElementById('admin-panel-submissions');
-                        if (panel && !panel.classList.contains('hidden')) {
-                            loadSubmissions();
-                        }
-                    }, 120);
-                }
-                return ret;
-            }
-            // Fallback (should not happen, but keep for safety)
-            hideAll();
-            const target = document.getElementById(id);
-            if (target) {
-                target.classList.remove('hidden');
-                setTimeout(()=> target.classList.add('active-view'), 50);
-                window.scrollTo(0,0); reinitReveal();
-            }
-            if (id === 'page-admin') setTimeout(() => loadSubmissions(), 150);
-        };
-
         // Admin helpers
         function switchAdminTab(which) {
             document.querySelectorAll('.admin-tab').forEach(b=> {
@@ -3593,7 +3830,6 @@
             if (panel) panel.classList.remove('hidden');
             if (which === 'submissions') loadSubmissions();
             if (which === 'updates') loadAdminUpdates();
-            if (which === 'community') loadCommunityAdmin();
             if (which === 'courses') loadCoursesAdmin();
         }
 
@@ -3721,102 +3957,7 @@
             await loadAdminUpdates(); await loadHomeUpdates();
         }
 
-        // Community links CRUD — admin-only, same pattern as site_updates (plain URL, no Storage)
-        async function loadCommunityAdmin(){
-            const list = document.getElementById('community-list-admin');
-            if (!list || !supabase) return;
-            list.innerHTML = '<p class="text-on-surface-variant text-sm">Loading…</p>';
-            const { data, error } = await supabase.from('community_links').select('*').order('order', {ascending:true}).order('created_at', {ascending:true});
-            if (error) { list.innerHTML = `<p class="text-red-400 text-sm">Error: ${escapeHtml(error.message)}</p>`; return; }
-            if (!data || data.length===0) { list.innerHTML = '<p class="text-on-surface-variant text-sm">No links yet.</p>'; return; }
-            list.innerHTML = data.map(entry => `
-                <div class="glass-card rounded-xl p-4 border border-white/5 flex flex-col gap-2">
-                    <div class="flex items-center gap-3">
-                        ${entry.cover_image_url ? `<img src="${escapeHtml(entry.cover_image_url)}" alt="${escapeHtml(entry.label)}" class="w-8 h-8 rounded-full object-cover">` : `<span class="material-symbols-outlined text-sm ${entry.platform==='whatsapp'?'text-[#25D366]':'text-[#00B2FF]'}">${entry.platform==='whatsapp'?'chat':'send'}</span>`}
-                        <div class="flex-1">
-                            <h4 class="text-white font-bold text-sm">${escapeHtml(entry.label)}</h4>
-                            <p class="text-[10px] uppercase tracking-widest ${entry.platform==='whatsapp'?'text-[#25D366]/70':'text-[#00B2FF]/70'}">${escapeHtml(entry.platform)}</p>
-                        </div>
-                        <span class="text-[10px] text-on-surface-variant/60">#${entry.order}</span>
-                    </div>
-                    <a href="${escapeHtml(entry.url)}" target="_blank" class="text-[10px] text-primary truncate">${escapeHtml(entry.url)}</a>
-                    ${entry.cover_image_url ? `<p class="text-[10px] text-on-surface-variant/60 truncate">Cover: ${escapeHtml(entry.cover_image_url)}</p>` : ''}
-                    <div class="flex gap-2 mt-2">
-                        <button onclick="editCommunity('${entry.id}')" class="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-bold uppercase tracking-widest">Edit</button>
-                        <button onclick="deleteCommunity('${entry.id}')" class="flex-1 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-xs font-bold uppercase tracking-widest">Delete</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-        async function handleCommunitySubmit(e){
-            e.preventDefault();
-            const id = document.getElementById('community-edit-id').value.trim();
-            const label = document.getElementById('community-label').value.trim();
-            const platform = document.getElementById('community-platform').value;
-            const url = document.getElementById('community-url').value.trim();
-            const cover_image_url = document.getElementById('community-cover').value.trim() || null;
-            const orderVal = parseInt(document.getElementById('community-order').value, 10);
-            const order = isNaN(orderVal) ? 0 : orderVal;
-            const errEl = document.getElementById('community-error');
-            errEl.classList.add('hidden');
-            if (!label || !url) { errEl.textContent = "Label and URL are required."; errEl.classList.remove('hidden'); return; }
-            if (!['whatsapp','messenger'].includes(platform)) { errEl.textContent = "Platform must be whatsapp or messenger."; errEl.classList.remove('hidden'); return; }
-            const btn = document.getElementById('community-submit-btn');
-            btn.disabled = true; btn.textContent = id ? 'Updating…' : 'Adding…';
-            try {
-                // Allow editing any subset: build payload with provided fields (label, platform, url, cover, order)
-                const payload = { label, platform, url, cover_image_url, order };
-                let error;
-                if (id) {
-                    const res = await supabase.from('community_links').update(payload).eq('id', id);
-                    error = res.error;
-                } else {
-                    const res = await supabase.from('community_links').insert(payload);
-                    error = res.error;
-                }
-                if (error) throw error;
-                resetCommunityForm();
-                await loadCommunityAdmin();
-                await renderCommunity(); // refresh public page
-            } catch(err){
-                errEl.textContent = friendlyAuthError(err) + (err.message ? " — " + err.message : "");
-                errEl.classList.remove('hidden');
-            } finally { btn.disabled=false; btn.textContent = document.getElementById('community-edit-id').value ? 'Update' : 'Add'; }
-        }
-        function resetCommunityForm(){
-            document.getElementById('community-edit-id').value='';
-            document.getElementById('community-label').value='';
-            document.getElementById('community-platform').value='whatsapp';
-            document.getElementById('community-url').value='';
-            document.getElementById('community-cover').value='';
-            document.getElementById('community-order').value='0';
-            document.getElementById('community-form-title').textContent='Add community link';
-            document.getElementById('community-submit-btn').textContent='Add';
-            document.getElementById('community-error').classList.add('hidden');
-        }
-        async function editCommunity(id){
-            if (!supabase) return;
-            const { data, error } = await supabase.from('community_links').select('*').eq('id', id).single();
-            if (error) return alert(friendlyAuthError(error));
-            document.getElementById('community-edit-id').value = data.id;
-            document.getElementById('community-label').value = data.label;
-            document.getElementById('community-platform').value = data.platform;
-            document.getElementById('community-url').value = data.url;
-            document.getElementById('community-cover').value = data.cover_image_url || '';
-            document.getElementById('community-order').value = data.order || 0;
-            document.getElementById('community-form-title').textContent='Edit link';
-            document.getElementById('community-submit-btn').textContent='Update';
-            document.getElementById('community-form').scrollIntoView({behavior:'smooth', block:'center'});
-        }
-        async function deleteCommunity(id){
-            if (!confirm('Delete this community link?')) return;
-            const { error } = await supabase.from('community_links').delete().eq('id', id);
-            if (error) return alert(friendlyAuthError(error) + "\n" + error.message);
-            await loadCommunityAdmin();
-            await renderCommunity();
-        }
-
-        // Courses admin CRUD — YouTube-only, leveled, ordered (same pattern as Community/Site Updates)
+        // Courses admin CRUD — YouTube-only, leveled, ordered (same pattern as Site Updates)
         let coursesAdminCache = [];
         function getNextCourseOrderForLevel(level) {
             const lvl = (level || document.getElementById('courses-level')?.value || 'beginner').toLowerCase();
@@ -3911,8 +4052,8 @@
                 if (error) throw error;
                 resetCoursesForm();
                 await loadCoursesAdmin();
-                // refresh public cache if needed
-                if (currentUser) loadCourses();
+                // refresh the public course list
+                loadCourses();
             } catch(err){
                 errEl.textContent = friendlyAuthError(err) + (err.message ? " — " + err.message : "");
                 errEl.classList.remove('hidden');
@@ -3948,12 +4089,16 @@
             const { error } = await supabase.from('courses').delete().eq('id', id);
             if (error) return alert(friendlyAuthError(error) + "\n" + error.message);
             await loadCoursesAdmin();
-            if (currentUser) loadCourses();
+            loadCourses();
         }
 
         // Init auth state on load
-        window.addEventListener('DOMContentLoaded', () => {
-            checkSession(); // restores persisted session (profile icon, gated nav) on every visit
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                await checkSession(); // restores persisted session (profile icon) on every visit
+            } finally {
+                _markSessionReady(); // #admin may now be decided safely
+            }
             // Listen for auth changes (login/logout in another tab, etc.)
             if (supabase) supabase.auth.onAuthStateChange(async (_event, session)=>{
                 try {
@@ -3967,24 +4112,19 @@
             });
             // Also load public feed immediately (even before auth)
             loadHomeUpdates();
+            // First page load — open whatever hash is in the address bar
+            routeFromHash();
         });
 
         // Expose for inline handlers
-        window.switchAuthMode = switchAuthMode;
         window.handleAuth = handleAuth;
         window.handleLogout = handleLogout;
-        window.handleCoursesNav = handleCoursesNav;
         window.switchAdminTab = switchAdminTab;
         window.loadSubmissions = loadSubmissions;
         window.handleUpdatesSubmit = handleUpdatesSubmit;
         window.resetUpdatesForm = resetUpdatesForm;
         window.editUpdate = editUpdate;
         window.deleteUpdate = deleteUpdate;
-        window.loadCommunityAdmin = loadCommunityAdmin;
-        window.handleCommunitySubmit = handleCommunitySubmit;
-        window.resetCommunityForm = resetCommunityForm;
-        window.editCommunity = editCommunity;
-        window.deleteCommunity = deleteCommunity;
         window.loadCoursesAdmin = loadCoursesAdmin;
         window.handleCoursesSubmit = handleCoursesSubmit;
         window.resetCoursesForm = resetCoursesForm;
@@ -4060,18 +4200,10 @@
         }
 
         async function loadCourses() {
+            // Public: everyone (logged in or not) can read the course list
             const list = document.getElementById('courses-list');
             const empty = document.getElementById('courses-empty');
-            const prompt = document.getElementById('courses-login-prompt');
             if (!list) return;
-            // Gate: must be logged in
-            if (!currentUser) {
-                if (prompt) prompt.classList.remove('hidden');
-                if (empty) empty.classList.add('hidden');
-                list.innerHTML = '';
-                return;
-            }
-            if (prompt) prompt.classList.add('hidden');
             list.innerHTML = '<p class="text-center text-on-surface-variant text-sm py-8">Loading courses…</p>';
             if (empty) empty.classList.add('hidden');
             if (!supabase) {
@@ -4125,29 +4257,7 @@
             }).join('');
         }
 
-        // Hook into existing page show and session flow
-        // When Courses page is shown, ensure correct level and load
-        const _origShowPageCourses = window.showPage;
-        // Already overridden once for admin gating; wrap again to add courses loading
-        // Instead, patch the existing override by adding logic after it (we add here)
-        // We will monkey-patch again: if page-courses, update switcher and load
-        (function(){
-            const prev = window.showPage;
-            window.showPage = function(id, tab){
-                const ret = prev(id, tab);
-                if (id === 'page-courses') {
-                    // Ensure user is logged in already handled by prev (redirects if not debater)
-                    // Update switcher visibility and load
-                    setTimeout(() => {
-                        updateCoursesSwitcherVisibility();
-                        loadCourses();
-                    }, 80);
-                }
-                return ret;
-            };
-        })();
-
-        // Also update switcher when profile loads (role/level changes)
+        // Hook into existing page show and session flow        // Also update switcher when profile loads (role/level changes)
         const _origUpdateNav = window.updateNavVisibility;
         if (typeof _origUpdateNav === 'function') {
             window.updateNavVisibility = function(){
@@ -4164,6 +4274,502 @@
         window.switchCourseLevel = switchCourseLevel;
         window.loadCourses = loadCourses;
 
+        // ============================================================
+        // PART A — Facebook icons on the current (latest) EC panel (#tab-xi).
+        // All profile links live in this ONE object. Keys are the names
+        // exactly as shown on the cards. If a card's name ever fails to
+        // match, the role/position is used as a fallback (see
+        // EC_XI_ROLE_FALLBACK below).
+        // ============================================================
+        const EC_XI_FACEBOOK = {
+            'Shahbin Ahnaf': 'https://www.facebook.com/share/1Jsez8z7jC/?mibextid=wwXIfr',
+            'Afra Anika Nodi': 'https://www.facebook.com/share/1DNSpaU42z/?mibextid=wwXIfr',
+            'Jihad Hossain Riyad': 'https://www.facebook.com/captainriduu',
+            'Maliha Mehnaz': 'https://www.facebook.com/share/1Eqe3YH5nb/?mibextid=wwXIfr',
+            'Md Mohtasim Alam': 'https://www.facebook.com/share/19Suk6jde7/?mibextid=wwXIfr',
+            'Ali Mahmud Anondo': 'https://www.facebook.com/share/179BoArsCq/?mibextid=wwXIfr',
+            'Rutuba Taufique': 'https://www.facebook.com/share/19X6W6L43y/?mibextid=wwXIfr',
+            'Rubaiyat Islam Rifat': 'https://www.facebook.com/share/19SXPzgu92/?mibextid=wwXIfr',
+            'Muntasir Ahmed': 'https://www.facebook.com/share/19ggHzXCXj/?mibextid=wwXIfr'
+        };
+
+        // Role/position fallback: normalized role text on the card -> the
+        // matching key in EC_XI_FACEBOOK (used only if the name lookup fails).
+        const EC_XI_ROLE_FALLBACK = {
+            'president': 'Shahbin Ahnaf',
+            'general secretary': 'Afra Anika Nodi',
+            'vice president (administration)': 'Jihad Hossain Riyad',
+            'vice president (d&w)': 'Maliha Mehnaz',
+            'joint secretary': 'Md Mohtasim Alam',
+            'organizing secretary': 'Ali Mahmud Anondo',
+            'publication secretary': 'Rutuba Taufique',
+            'office secretary': 'Rubaiyat Islam Rifat',
+            'it secretary': 'Muntasir Ahmed'
+        };
+
+        function normalizeMemberName(name) {
+            return (name || '').replace(/\./g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+        }
+
+        function normalizeRole(text) {
+            return (text || '').replace(/\s+/g, ' ').trim().toLowerCase();
+        }
+
+        function mountEcXiFbIcons() {
+            const byNorm = {};
+            Object.keys(EC_XI_FACEBOOK).forEach(function (name) {
+                byNorm[normalizeMemberName(name)] = EC_XI_FACEBOOK[name];
+            });
+            document.querySelectorAll('#tab-xi .member-card').forEach(function (card) {
+                if (card.querySelector('[data-fb-icon]')) return; // already injected
+                const heading = card.querySelector('h3, h4');
+                // member photo = the img with a non-empty alt (the fallback logo has alt="")
+                const photo = Array.prototype.slice.call(card.querySelectorAll('img'))
+                    .filter(function (img) { return (img.getAttribute('alt') || '').trim(); })[0];
+                if (!heading || !photo || !photo.parentElement) return;
+                let url = byNorm[normalizeMemberName(heading.textContent)];
+                if (!url) {
+                    const roleSpan = card.querySelector('span.text-secondary');
+                    if (roleSpan) {
+                        const key = EC_XI_ROLE_FALLBACK[normalizeRole(roleSpan.textContent)];
+                        if (key) url = byNorm[normalizeMemberName(key)];
+                    }
+                }
+                if (!url) return;
+                const photoWrap = photo.parentElement;
+                photoWrap.style.position = 'relative'; // anchor point for the corner icon
+                const link = document.createElement('a');
+                link.href = url;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                link.className = 'ec-fb-icon';
+                link.setAttribute('data-fb-icon', '');
+                link.setAttribute('aria-label', 'Facebook profile of ' + heading.textContent.trim());
+                // never let the icon click trigger the card itself
+                link.addEventListener('click', function (e) { e.stopPropagation(); });
+                link.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17,2V2H17V6H15C14.31,6 14,6.81 14,7.5V10H14L17,10V14H14V22H10V14H7V10H10V6A4,4 0 0,1 14,2H17Z"/></svg>';
+                photoWrap.appendChild(link);
+            });
+        }
+
+        // ============================================================
+        // PART B — Past Events (Events page), rendered from ONE array.
+        // FIRST item in the array = FIRST card on the page.
+        //
+        // To add a new event, add one line in the right position:
+        //   { title: 'Exact event title',
+        //     url: 'https://facebook.com/events/s/...',
+        //     image: 'images/events/event-26.jpg' },
+        //
+        // `image` is a LOCAL file in images/events/ (event-01.jpg ...
+        // event-25.jpg, number = the event's position in this list). If the
+        // file is missing, the card automatically shows the DSDC logo
+        // fallback instead of a broken-image icon.
+        // `badge` (pill on the photo) and `desc` (line under the title) are
+        // OPTIONAL — only the 6 legacy cards that existed before have them.
+        // Omit them for new events; no empty gap is rendered.
+        // ============================================================
+        const PAST_EVENT_FALLBACK_LOGO = 'https://res.cloudinary.com/dd1x7wc7y/image/upload/v1779793489/1-removebg-preview_rwymms.png';
+
+        const PAST_EVENTS = [
+            { title: 'DSDC Presents এ আর রাইয়ান স্মৃতি বিতর্ক উৎসব-২৬', url: 'https://facebook.com/events/s/dsdc-presents-%E0%A6%8F-%E0%A6%86%E0%A6%B0-%E0%A6%B0%E0%A6%87%E0%A6%AF%E0%A6%A8-%E0%A6%B8%E0%A6%AE%E0%A6%A4-%E0%A6%AC%E0%A6%A4/1576811150107748/', image: 'images/events/event-01.jpg' },
+            { title: 'DSDC Presents Inter Class Debate Tournament-26', url: 'https://facebook.com/events/s/dsdc-presents-inter-class-deba/1768213901267894/', image: 'images/events/event-02.jpg' },
+            { title: 'DSDC Presents 10th DSDC Takeoff', url: 'https://facebook.com/events/s/dsdc-presents-10th-dsdc-takeof/1463218122216516/', image: 'https://res.cloudinary.com/dd1x7wc7y/image/upload/v1780326094/WhatsApp_Image_2026-06-01_at_2.05.40_PM_jxx0we.jpg', badge: 'TAKEOFF', desc: 'Flagship Debate Championship' },
+            { title: 'DSDC Presents অমর একুশে বাগ্মীতা ১.০', url: 'https://facebook.com/events/s/dsdc-presents-%E0%A6%85%E0%A6%AE%E0%A6%B0-%E0%A6%8F%E0%A6%95%E0%A6%B6-%E0%A6%AC%E0%A6%97%E0%A6%AE%E0%A6%A4-%E0%A7%A7%E0%A7%A6/1918606898759020/', image: 'https://res.cloudinary.com/dd1x7wc7y/image/upload/v1780326176/WhatsApp_Image_2026-06-01_at_1.59.15_PM_ig2x63.jpg', badge: 'বাগ্মিতা', desc: 'Cultural Oratory Tournament' },
+            { title: 'Retina Presents 9th DSDC take off 2025 powered by icon Plus', url: 'https://facebook.com/events/s/retina-presents-9th-dsdc-takeo/655525797334300/', image: 'https://res.cloudinary.com/dd1x7wc7y/image/upload/v1780326176/WhatsApp_Image_2026-06-01_at_2.00.53_PM_knzpy1.jpg', badge: 'TAKEOFF', desc: 'Legacy Championship' },
+            { title: 'DSDC Presents Debate Mastery : Asian parliamentary & WSDC Edition', url: 'https://facebook.com/events/s/dsdc-presents-debate-mastery-a/496065380077322/', image: 'images/events/event-06.jpg' },
+            { title: 'চলো পাল্টাই - Let\'s REFORM our Motherland', url: 'https://facebook.com/events/s/%E0%A6%9A%E0%A6%B2-%E0%A6%AA%E0%A6%B2%E0%A6%9F%E0%A6%87-lets-reform-our-mother/1211014433375365/', image: 'images/events/event-07.jpg' },
+            { title: '8th DSDC Take-off 2024', url: 'https://facebook.com/events/s/8th-dsdc-take-off-2024/802992111369338/', image: 'https://res.cloudinary.com/dd1x7wc7y/image/upload/v1780326177/WhatsApp_Image_2026-06-01_at_2.01.34_PM_geuhcm.jpg', badge: 'TAKEOFF', desc: 'Legacy Championship' },
+            { title: 'DSDC TAKEOFF 2023', url: 'https://facebook.com/events/s/dsdc-takeoff-2023/3531881617049180/', image: 'images/events/event-09.jpg' },
+            { title: 'DSDC Nationals 2023', url: 'https://facebook.com/events/s/dsdc-nationals-2023/716976906565100/', image: 'https://res.cloudinary.com/dd1x7wc7y/image/upload/v1780326176/WhatsApp_Image_2026-06-01_at_2.01.33_PM_fhfyxi.jpg', badge: 'NATIONALS', desc: 'Premier Debate Circuit' },
+            { title: 'DSDC Takeoff 2022', url: 'https://facebook.com/events/s/dsdc-takeoff-2022/1047060366214617/', image: 'images/events/event-11.jpg' },
+            { title: 'DSDC MOITRI', url: 'https://facebook.com/events/s/dsdc-moitri/559840868617906/', image: 'images/events/event-12.jpg' },
+            { title: 'DSDC Coherence 2021', url: 'https://facebook.com/events/s/dsdc-coherence-2021/364859658342861/', image: 'images/events/event-13.jpg' },
+            { title: 'DSDC Battle Grounds 1.0', url: 'https://facebook.com/events/s/dsdc-battle-grounds-10/946753669468247/', image: 'https://res.cloudinary.com/dd1x7wc7y/image/upload/v1780326175/WhatsApp_Image_2026-06-01_at_2.03.15_PM_rkmljf.jpg', badge: 'BATTLEGROUNDS', desc: 'Elite Arena Debates' },
+            { title: 'Pro-Ams 1.0 Selection Phase', url: 'https://facebook.com/events/s/pro-ams-10-selection-phase/314049843648421/', image: 'images/events/event-15.jpg' },
+            { title: 'English Debate Champ', url: 'https://facebook.com/events/s/english-debate-camp/3757563814289322/', image: 'images/events/event-16.jpg' },
+            { title: 'Price Giving Ceremony of DSDC Inter Section 2020', url: 'https://facebook.com/events/s/prize-giving-ceremony-of-dsdc-/3784537284926379/', image: 'images/events/event-17.jpg' },
+            { title: 'DSDC Take Off', url: 'https://facebook.com/events/s/dsdc-take-off/1008474022998429/', image: 'images/events/event-18.jpg' },
+            { title: 'DSDC Presence Bangla Debate Champ', url: 'https://facebook.com/events/s/dsdc-presents-bangla-debate-ca/277203346858903/', image: 'images/events/event-19.jpg' },
+            { title: 'DSDC Coherence\'20', url: 'https://facebook.com/events/s/dsdc-coherence20/892161931265635/', image: 'images/events/event-20.jpg' },
+            { title: 'বিএসডিসি জীবন নিয়ে খেলা "ব্রিটিশ সংসদীয় মিক্স আপ" বাংলা বিতর্ক', url: 'https://facebook.com/events/s/%E0%A6%A1%E0%A6%8F%E0%A6%B8%E0%A6%A1%E0%A6%B8-%E0%A6%9C%E0%A6%AC%E0%A6%A8-%E0%A6%A8%E0%A6%AF-%E0%A6%96%E0%A6%B2-%E0%A6%AC%E0%A6%B0%E0%A6%9F%E0%A6%B6-%E0%A6%B8%E0%A6%B8%E0%A6%A6%E0%A6%AF-%E0%A6%AE%E0%A6%95%E0%A6%B8-/706585090136326/', image: 'images/events/event-21.jpg' },
+            { title: 'ESAD নিবেদিত ডিএসডিসি তর্কযুদ্ধ ২০১৮', url: 'https://facebook.com/events/s/esad-%E0%A6%A8%E0%A6%AC%E0%A6%A6%E0%A6%A4-%E0%A6%A1%E0%A6%8F%E0%A6%B8%E0%A6%A1%E0%A6%B8-%E0%A6%A4%E0%A6%B0%E0%A6%95%E0%A6%AF%E0%A6%A6%E0%A6%A7-%E0%A7%A8%E0%A7%A6%E0%A7%A7%E0%A7%AE/187886118464801/', image: 'images/events/event-22.jpg' },
+            { title: 'ডিএসডিসি স্মৃতিচারণা ১.০', url: 'https://facebook.com/events/s/%E0%A6%A1%E0%A6%8F%E0%A6%B8%E0%A6%A1%E0%A6%B8-%E0%A6%B8%E0%A6%AE%E0%A6%A4%E0%A6%9A%E0%A6%B0%E0%A6%A8-%E0%A7%A7%E0%A7%A6/161220711298286/', image: 'images/events/event-23.jpg' },
+            { title: '৩য় ডিএসডিসি আন্তঃশাখা বিতর্ক উৎসব ২০১৭', url: 'https://facebook.com/events/s/%E0%A7%A9%E0%A6%AF-%E0%A6%A1%E0%A6%8F%E0%A6%B8%E0%A6%A1%E0%A6%B8-%E0%A6%86%E0%A6%A8%E0%A6%A4%E0%A6%B6%E0%A6%96-%E0%A6%AC%E0%A6%A4%E0%A6%B0%E0%A6%95-%E0%A6%89%E0%A7%8E%E0%A6%B8%E0%A6%AC-%E0%A7%A8%E0%A7%A6%E0%A7%A7%E0%A7%AD/357242254710290/', image: 'images/events/event-24.jpg' },
+            { title: 'ডিএসডিসি দ্বিতীয় আন্তঃশাখা বিতর্ক প্রতিযোগিতা ২০১৬', url: 'https://facebook.com/events/s/%E0%A6%A1%E0%A6%8F%E0%A6%B8%E0%A6%A1%E0%A6%B8-%E0%A7%A8%E0%A6%AF-%E0%A6%86%E0%A6%A8%E0%A6%A4%E0%A6%B6%E0%A6%96-%E0%A6%AC%E0%A6%A4%E0%A6%B0%E0%A6%95-%E0%A6%AA%E0%A6%B0%E0%A6%A4%E0%A6%AF%E0%A6%97%E0%A6%A4-%E0%A7%A8%E0%A7%A6%E0%A7%A7/1043923578995464/', image: 'images/events/event-25.jpg' }
+        ];
+
+        function renderPastEvents() {
+            const grid = document.getElementById('past-events-grid');
+            if (!grid) return;
+            grid.innerHTML = PAST_EVENTS.map(function (ev) {
+                const badgeHtml = ev.badge
+                    ? '<div class="absolute top-4 left-4 md:top-6 md:left-6 z-10"><span class="past-event-badge px-2.5 py-0.5 md:px-3 md:py-1 bg-[#00a6fb]/20 backdrop-blur-md border border-[#00a6fb]/30 text-[#94ccff] text-[9px] md:text-[10px] font-bold rounded-full uppercase tracking-widest">' + escapeHtml(ev.badge) + '</span></div>'
+                    : '';
+                const descHtml = ev.desc
+                    ? '<p class="text-on-surface-variant text-[10px] md:text-xs uppercase tracking-wider opacity-60">' + escapeHtml(ev.desc) + '</p>'
+                    : '';
+                return '' +
+                    '<a href="' + escapeHtml(ev.url) + '" target="_blank" rel="noopener noreferrer" class="group reveal active flex flex-col h-full">' +
+                        '<div class="relative glass-card backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-3xl overflow-hidden transition-all duration-700 hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(0,166,251,0.2)] hover:border-primary/40 group flex flex-col h-full">' +
+                            '<div class="w-full aspect-[16/9] overflow-hidden bg-[#0b1229] relative">' +
+                                '<div class="absolute inset-0 flex flex-col items-center justify-center gap-2">' +
+                                    '<img src="' + PAST_EVENT_FALLBACK_LOGO + '" alt="" loading="lazy" class="w-14 opacity-70">' +
+                                    '<span class="text-[9px] uppercase tracking-widest text-on-surface-variant/60 font-bold">DSDC Archive</span>' +
+                                '</div>' +
+                                '<img src="' + escapeHtml(ev.image) + '" alt="' + escapeHtml(ev.title) + '" loading="lazy" onerror="this.style.display=\'none\'" class="absolute inset-0 w-full h-full object-cover object-center scale-110 group-hover:scale-100 transition-all duration-1000">' +
+                                '<div class="absolute inset-0 bg-gradient-to-t from-[#0b1229] via-[#0b1229]/60 to-transparent"></div>' +
+                                badgeHtml +
+                            '</div>' +
+                            '<div class="p-6 md:p-8 bg-[#181e36]/50 flex flex-col flex-grow justify-between text-left">' +
+                                '<div>' +
+                                    '<h4 class="past-event-title text-lg md:text-xl text-on-surface font-black mb-1.5 tracking-tight uppercase group-hover:text-[#00a6fb] transition-colors leading-tight">' + escapeHtml(ev.title) + '</h4>' +
+                                    descHtml +
+                                '</div>' +
+                            '</div>' +
+                        '</div>' +
+                    '</a>';
+            }).join('');
+        }
+
+        mountEcXiFbIcons();
+        renderPastEvents();
+
+        // ============================================================
+        // PART A — "Join DSDC" wing-choice popup.
+        // One object = the two Google Form links. Both wings are live:
+        // each option opens its form in a new tab and closes the popup.
+        // ============================================================
+        const JOIN_FORMS = {
+            college: 'https://forms.gle/akHbRjGHVUy4B7WN9',
+            school: 'https://forms.gle/r5sKFGdxnfkTn4T7A'
+        };
+
+        // ============================================================
+        // Shared modal open/close (Join popup + moderator "Read message"
+        // popup): Esc + backdrop + X close, body scroll lock, focus
+        // trap, focus return to the button that opened it.
+        // ============================================================
+        function getModalFocusable(modal) {
+            return Array.prototype.slice.call(modal.querySelectorAll(
+                'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])'
+            )).filter(function (el) { return el.offsetParent !== null; });
+        }
+
+        function openModal(id, trigger) {
+            const modal = document.getElementById(id);
+            if (!modal) return;
+            document.querySelectorAll('.modal.is-open').forEach(function (other) {
+                if (other !== modal) closeModal(other);
+            });
+            modal._prevBodyOverflow = document.body.style.overflow;
+            modal._lastFocus = trigger || document.activeElement;
+            modal.classList.add('is-open');
+            document.body.style.overflow = 'hidden';
+            const items = getModalFocusable(modal);
+            (items[0] || modal).focus();
+        }
+
+        function closeModal(modal) {
+            const m = typeof modal === 'string' ? document.getElementById(modal) : modal;
+            if (!m || !m.classList.contains('is-open')) return;
+            m.classList.remove('is-open');
+            document.body.style.overflow = m._prevBodyOverflow || '';
+            if (m._lastFocus && typeof m._lastFocus.focus === 'function') {
+                m._lastFocus.focus();
+            }
+        }
+
+        document.addEventListener('keydown', function (e) {
+            const open = document.querySelector('.modal.is-open');
+            if (!open) return;
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                closeModal(open);
+                return;
+            }
+            if (e.key === 'Tab') {
+                const items = getModalFocusable(open);
+                if (!items.length) return;
+                const first = items[0];
+                const last = items[items.length - 1];
+                if (e.shiftKey && document.activeElement === first) {
+                    e.preventDefault();
+                    last.focus();
+                } else if (!e.shiftKey && document.activeElement === last) {
+                    e.preventDefault();
+                    first.focus();
+                } else if (!open.contains(document.activeElement)) {
+                    e.preventDefault();
+                    first.focus();
+                }
+            }
+        });
+
+        document.addEventListener('click', function (e) {
+            const opener = e.target.closest && e.target.closest('[data-modal-open]');
+            if (opener) {
+                e.preventDefault();
+                openModal(opener.getAttribute('data-modal-open'), opener);
+                return;
+            }
+            const closer = e.target.closest && e.target.closest('[data-modal-close]');
+            if (closer) {
+                const modal = closer.closest('.modal');
+                if (modal) closeModal(modal);
+            }
+        });
+
+        function renderJoinWings() {
+            const wrap = document.getElementById('join-wings');
+            if (!wrap) return;
+            wrap.innerHTML = '';
+            [['college', 'College Wing'], ['school', 'School Wing']].forEach(function (pair) {
+                const key = pair[0];
+                const label = pair[1];
+                const url = JOIN_FORMS[key];
+                if (url) {
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.target = '_blank';
+                    link.rel = 'noopener noreferrer';
+                    link.className = 'flex items-center justify-between w-full px-5 md:px-6 py-4 md:py-5 rounded-xl md:rounded-2xl bg-primary-container text-on-primary-container font-black uppercase tracking-[0.2em] text-xs md:text-sm hover:shadow-[0_0_40px_rgba(0,166,251,0.5)] hover:scale-[1.02] active:scale-95 transition-all';
+                    link.innerHTML = '<span>' + label + '</span><span class="material-symbols-outlined text-lg">arrow_outward</span>';
+                    link.addEventListener('click', function () { closeModal('join-modal'); });
+                    wrap.appendChild(link);
+                } else {
+                    const disabled = document.createElement('div');
+                    disabled.className = 'flex items-center justify-between w-full px-5 md:px-6 py-4 md:py-5 rounded-xl md:rounded-2xl bg-white/5 border border-white/10 text-on-surface-variant/60 font-black uppercase tracking-[0.2em] text-xs md:text-sm select-none';
+                    disabled.setAttribute('aria-disabled', 'true');
+                    disabled.innerHTML = '<span>' + label + '</span><span class="text-[9px] md:text-[10px] tracking-widest px-2.5 py-1 rounded-full bg-white/5 border border-white/10 normal-case">Coming soon</span>';
+                    wrap.appendChild(disabled);
+                }
+            });
+        }
+        renderJoinWings();
+
+        // ============================================================
+        // PART B — Founders speech (Aurgho Aurpon).
+        // Every line break in FOUNDER_SPEECH starts a new paragraph.
+        // The block appears on the Founders page automatically; it is
+        // hidden while FOUNDER_SPEECH is empty.
+        // ============================================================
+        const FOUNDER_SPEECH = `শাহীনে একটা ডিবেট ক্লাব হবে, এটা অনেকেরই স্বপ্ন ছিলো৷ আমি যখন কলেজে ভর্তি হই তার বেশ আগে থেকে অনেকেই চেষ্টা করতো বাইরের ফেস্ট গুলোতে যাওয়ার৷ সেরকমই, আমি যখন ২০১৩ এর আগস্টে কলেজে ভর্তি হই, প্রথম দিনই ক্লাস টিচারকে জিজ্ঞেস করি এখানে কোনো ডিবেট ক্লাব আছে কিনা! তিনি আমাকে একটাই কথা বলেন যে - সাজ্জাদ স্যারের কাছে যাও, উনি বলতে পারবেন৷
+সাজ্জাদ স্যার আসলে কোন ডিপার্টমেন্টে ছিলেন, জানতাম না৷ এমনকি তার রুমটা কোথায় আমি সেটাও জানা ছিল না। অবশেষে, প্রায় এক সপ্তাহ পর সাজ্জাদ স্যারকে পাই এবং তার কাছে গিয়ে বলি - ডিবেট করতে চাই। স্যারের কাছে জানতে পারি যে কিছুদিন আগে ডিবেট নিয়ে আরও এক-দুইজন স্যারের কাছে এসেছিলো৷ স্যারের থেকে তাদের নাম, সেকশন নেই এবং ক্লাসে ক্লাসে গিয়ে খুঁজতে শুরু করি। তাদের মধ্যে একজন ছিলো মেহেদী হাসান রিফাদ আরেকজন সুমাইয়া৷ আমার মনে আছে, একদিন ক্লাস হচ্ছিলো, ক্লাসে গিয়ে সরাসরি আমি স্যারকে বলি মেহেদি হাসান রিফাদ কে? তাকে সাজ্জাদ স্যার ডাকছেন৷ স্যার সঙ্গে সঙ্গে বললেন মেহেদি হাসান রিফাদ কে?  দাড়াও৷ চলে আসো৷
+রিফাদকে ক্লাস থেকে বের করে ভয়ে ভয়ে বলি - হাই! আমি অর্ঘ্য৷ আমি ডিসিএল -এ ডিবেট করতাম৷ কলেজে একটা ডিবেট ক্লাব ফর্ম করতে চাচ্ছি৷ তুমিও নাকি ডিবেট করতা৷ কোথায় ডিবেট করতা?.......
+
+বেসিক্যালি এই ছিল শুরু। দুইজন মেম্বার - আমি আর রিফাদ। তখনো ক্লাব আসলে নাই। স্যার বললেন, 'তোরা আগে আরও ছেলে পেলে ম্যানেজ কর। '
+পরবর্তী তে আমরা সুমাইয়া কে পাই, আর পাই শফিকুল ইসলাম শাওন কে।আমরা এই ৩/৪ জন মিলেই মূলত চেষ্টা করতে থাকি বাইরের ফেস্ট গুলোতে যাওয়ার। কিন্তু আমাদের যেহেতু ক্লাব নেই, বেশিরভাগ সময়ই দেখা যেতো আমাদের স্লট দেয়া হতো না শুরুর দিকে। বিভিন্ন জায়গায় ট্রাই করে যেখানে স্লট পেতাম, সেখানে ডিবেট করতে গিয়ে দেখা যেতো ট্যাব রাউন্ড গুলো সবগুলো হেরে চলে আসছি। এভাবে আসলে আমাদের ডিবেট করাটা শুরু হয়। প্রথম কলেজ থেকে পার্লামেন্টারি  ডিবেট করতে টিম বাইরে যেতে শুরু করে; আমাদের থেকেই ৩ জন যেতে থাকি।
+
+এভাবে আমরা যখন সেকেন্ড ইয়ারে, অর্থাৎ এক বছর অলরেডি কেটে গেছে তখন আমাদের সাথে পরিচয় হয় ফার্স্ট ইয়ারে নতুন আসা একটা ছেলের, তার নাম ফারহান ইমতিয়াজ নাফি। সে রাজবাড়ির বেশ তারকা বিতার্কিক। তো শুরুতে তার সাথে পরিচয় হয়। তাকে আমরা বলি, 'আমরা তো একটা বিতর্ক ক্লাব করতে চাচ্ছি,তো তুমি আমাদের সাথে থাকবা। '
+সে বলে, 'হে ভাই এইটা তো খুব ভাল হবে। '
+নাফি যখন আসে তখন আসলে আমরা একটা ট্রাস্ট পাই,যে ওকে ফাইন, এখন আমাদের চার পাঁচ জনের একটা টিম। আমরা তখন বাইরে ডিবেট করতে গেলে মানুষ একটু ফোকাস করতো, বলতো, 'আরে, শাহীন থেকে ডিবেট করতে আসে, এরা কারা?' তখন আসলে মানুষ আমাদের চিনতে থাকে। বিচারকদের সাথে আমাদের একটা ভাল পরিচয় হতে থাকে। এইরকম করতে করতে আমাদের টেস্ট চলে আসে, নাফি তখন সেকেন্ড ইয়ারে। তখন মূলত মেইন কাজ গুলো নাফিই করতে থাকে।
+
+আমাদের এপ্লিকেশন গুলো তো রেডি করা ছিল। এগুলা নিয়ে সাজ্জাদ স্যার এর কাছে যাওয়া, প্রিন্সিপাল স্যার এর কাছে যাওয়া, এই দৌড়াদৌড়ির কাজ গুলো নাফি তখন পুরো দমে করতে থাকে। আবার তখন কিছু ফার্স্ট ইয়ারের জুনিয়রও যুক্ত হয়। তখন ফাস্ট ইয়ারে (মরহুম) মুস্তাকিম বিল্লা জয় সহ বেশ কয়েকজ এক্টিভ জুনিয়র যুক্ত হয়। তাদেরকে নিয়ে নাফি কাজ করতে থাকে এবং পিছন থেকে আমরা যতটুকু পারি হেল্প করতে থাকি, যেহেতু আমাদের টেস্ট এক্সাম এবং সামনে এইচএসসি ছিল, তো আমরা তেমন একটা হেল্প করতে পারি নাই। যখন আমাদের এইচএসসি এক্সাম শেষ হল,  আমরা শুনি প্রিন্সিপাল স্যার কলেজে একটা ডিবেট ক্লাব খোলার অনুমতি দিয়েছেন।
+সো,বেসিকেল্লি দেটস দা বিগিনিং। এরপরের কাহিনী গুলো আসলে এখন তোমরা যারা কারেন্ট মেম্বার আছে তাদের থেকে জানতে পারবা। এখন সার্কিটে ডিএসডিসি কে সবাই চিনে। এইতো! দেটস দা হিস্ট্রি।
+
+সবসময় যারা কমিটিতে থাকবে তাদের প্রতি একটা রিকোয়েস্ট থাকবে যে ডিবেট সার্কিটে কি হচ্ছে, ডিবেট সার্কিটের আসলে অবস্থা কেমন, ভালো নাকি খারাপ রিগার্ডলেস অফ অল দিস থিংস, শাহীনের ডিবেটটা জেনো ভালো থাকে৷ সবসময়ই যারা জুনিয়র আছে তারা যেনো একটা স্ট্যান্ডার্ড ফলো করতে পারে৷ তাদের জন্য জেনো একটা স্ট্যান্ডার্ড রেখে যাওয়া হয়৷ এই ব্যাপারটা জেনো মেক সিউর করা হয়।
+হয় আমাকে এই স্ট্যান্ডার্ড টা মেইনটেইন করতে হবে অথবা এই স্ট্যান্ডার্ড টাকে আরেকটু আপার বার এ সেট করতে হবে - এটাই টার্গেট।
+
+এই জিনিসটা জেনো মেক সিউর করতে পারে কারেন্ট কমিটি৷`;
+
+        const FOUNDER_SIGNATURE = [
+            '- অর্ঘ্য অর্পণ দাশ',
+            'প্রতিষ্ঠাতা',
+            'ঢাকা শাহীন ডিবেটিং ক্লাব'
+        ];
+
+        function renderFounderSpeech() {
+            const slot = document.getElementById('founders-speech-slot');
+            if (!slot) return;
+            const text = (FOUNDER_SPEECH || '').trim();
+            if (!text) { slot.innerHTML = ''; return; }
+            // every line break starts a new paragraph; skip empty lines
+            const lines = text.split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
+
+            const wrap = document.createElement('div');
+            wrap.className = 'reveal';
+
+            // accent line — matches the homepage About section
+            const accent = document.createElement('div');
+            accent.className = 'w-24 md:w-40 h-1.5 md:h-2 bg-primary-container rounded-full shadow-[0_0_20px_rgba(0,166,251,0.5)] mx-auto md:mx-0 mb-6 md:mb-10';
+            wrap.appendChild(accent);
+
+            const body = document.createElement('div');
+            body.className = 'founder-speech space-y-4 md:space-y-6 text-base md:text-xl text-on-surface-variant';
+            lines.forEach(function (line) {
+                const p = document.createElement('p');
+                p.textContent = line; // never innerHTML with the raw speech text
+                body.appendChild(p);
+            });
+            wrap.appendChild(body);
+
+            if (FOUNDER_SIGNATURE && FOUNDER_SIGNATURE.length) {
+                const sig = document.createElement('div');
+                sig.className = 'founder-signature mt-8 md:mt-12 space-y-0.5';
+                FOUNDER_SIGNATURE.forEach(function (line, i) {
+                    const p = document.createElement('p');
+                    p.textContent = line;
+                    p.className = i === 0
+                        ? 'text-[#94ccff] font-bold text-sm md:text-base'
+                        : 'text-on-surface-variant text-xs md:text-sm';
+                    sig.appendChild(p);
+                });
+                wrap.appendChild(sig);
+            }
+
+            slot.innerHTML = '';
+            slot.appendChild(wrap);
+        }
+        renderFounderSpeech();
+
+        // ============================================================
+        // PART C — Moderators page cards.
+        // To add a moderator: copy one object, paste it at the end of the list,
+        // and fill in the fields. Leave `speech` as '' if there is no message.
+        // ============================================================
+        const MODERATORS = [
+            {
+                name: 'Amina Akter',
+                designation: 'Assistant Teacher (Bangla)',
+                email: 'aminaayat449@gmail.com',
+                image: 'images/moderators/Amina_Akter.jpeg',
+                speech: `জ্ঞান মানুষের মনের অজ্ঞতাকে দূর করে তাকে নম্র ও সংযত হতে শেখায়। ঠিক দার্শনিক সক্রেটিস বলেছিলেন, “আমি জানি যে আমি কিছুই জানি না।” এই একটিমাত্র স্বীকারোক্তি তাকে পৃথিবীর অন্যতম জ্ঞানী মানুষ বানিয়েছিল। কারণ, যে মানুষ মনে করে সে সব জানে, তার শেখার দরজা বন্ধ হয়ে যায়। তাই আমাদের উচিত তথ্য নিজের মধ্যে জমা না করে, সেই তথ্যকে জ্ঞানে রূপান্তর করা এবং একটা মানুষের কল্যাণে কাজে লাগানো।`
+            },
+            {
+                name: 'Ruksana Akter',
+                designation: 'Demonstrator',
+                email: 'ruksanaskterrumi15@gmail.com',
+                image: 'images/moderators/Ruksana_Akter.jpeg',
+                speech: `আসসালামু আলাইকুম।
+শিক্ষা,সংযম ও শৃঙ্খলার পাশাপাশি ঢাকা শাহীন ডিবেটিং ক্লাব যুক্তি, জ্ঞান, বাগ্মিতা ও নেতৃত্বের বিকাশে রাখছে অনন্য সাফল্য।এ ক্লাবের প্রতিটি সদস্যের নিষ্ঠা, দায়িত্বশীলতা এবং সম্মিলিত প্রচেষ্টা ক্লাবের পথচলাকে করেছে আরও সমৃদ্ধ।
+এর মাধ্যমে অর্জিত অভিজ্ঞতা ও সাফল্য ভবিষ্যৎ তার্কিকদের অনুপ্রাণিত করবে যারা জাতীয় ও আন্তর্জাতিক পর্যায়ে ও অবদান রাখবে বলে আমি আশা করি।ডিবেট ক্লাব যুক্তিবাদী চিন্তা, মুক্তবুদ্ধির চর্চা ও দক্ষ বিতার্কিক তৈরিতে আরও এগিয়ে যাবে ইন শা আল্লাহ। ডিবেট ক্লাবের সকল সদস্যের জন্য রইল আন্তরিক শুভকামনা ও শুভাশিস।
+ধন্যবাদ সবাইকে।`
+            },
+            {
+                name: 'Md. Abdullah Al Jubayer',
+                designation: 'Assistant Teacher (English Version), Co-Moderator',
+                email: 'abdullahaljubayer1418@gmail.com',
+                image: 'images/moderators/Abdullah_Al_Jubayer.jpeg',
+                speech: `ঢাকা শাহীণ ডিবেটিং ক্লাব (DSDC) আমার কাছে কেবল একটি সহশিক্ষা কার্যক্রমের অংশ নয়; বরং এটি শিক্ষার্থীদের চিন্তাশক্তি, যুক্তিবোধ, আত্মবিশ্বাস ও নেতৃত্বের গুণাবলি বিকাশের একটি গুরুত্বপূর্ণ ক্ষেত্র। বিতর্কচর্চা শিক্ষার্থীদের শুধু নিজের মতামত যুক্তিসহ উপস্থাপন করতে শেখায় না, বরং অন্যের মতামতকে শ্রদ্ধা করতে, ভিন্নমতকে ইতিবাচকভাবে গ্রহণ করতে এবং যুক্তির মাধ্যমে সত্য অনুসন্ধান করতেও অনুপ্রাণিত করে।
+ক্লাবের কো-মডারেটর হিসেবে আমি বিশ্বাস করি, আমাদের দায়িত্ব কেবল দক্ষ বিতার্কিক তৈরি করা নয়; বরং এমন একদল সচেতন, দায়িত্বশীল ও মুক্তচিন্তার অধিকারী তরুণ গড়ে তোলা, যারা ভবিষ্যতে দেশ ও সমাজের কল্যাণে ইতিবাচক ভূমিকা রাখবে। আমি প্রত্যাশা করি, DSDC তার কার্যক্রম, সৃজনশীলতা ও সাফল্যের মাধ্যমে শিক্ষার্থীদের মেধা বিকাশে আরও গুরুত্বপূর্ণ অবদান রাখবে এবং যুক্তিনির্ভর, সহনশীল ও জ্ঞানভিত্তিক প্রজন্ম গঠনে অগ্রণী ভূমিকা পালন করবে।
+আমি DSDC-এর এই পথচলার অংশ হতে পেরে আনন্দিত ও আশাবাদী। আমাদের সম্মিলিত প্রচেষ্টা, আন্তরিকতা ও শিক্ষার্থীদের অংশগ্রহণে ক্লাবটি আরও সমৃদ্ধ ও গতিশীল হয়ে উঠুক এটাই আমার প্রত্যাশা।
+
+“যুক্তিতে হোক চিন্তার বিকাশ, বিতর্কে হোক জ্ঞানের বিস্তার, আর ভিন্নমতের প্রতি শ্রদ্ধায় গড়ে উঠুক সুন্দর আগামী”।`
+            },
+            {
+                name: 'Naznen Karim',
+                designation: 'Demonstrator, Higher Mathematics',
+                email: 'karimnaznen@gmail.com',
+                image: 'images/moderators/Nazneen_Haque.jpeg',
+                speech: `ঢাকা শাহীন ডিবেটিং ক্লাব (DSDC) তার পথচলার অনেকগুলো বছর পেরিয়ে এসেছে। বাংলাদেশের স্কুল এবং কলেজ পর্যায়ের বিতর্ক  ধারায় একটি উজ্জ্বল নাম DSDC ।  বিতর্ক করা, প্রতিযোগিতা আয়োজন,নতুন বিতার্কিক তৈরি, সাংগঠনিক সক্ষমতা সব হ্মেত্রে ক্লাবটি অসাধারণ কাজ করে চলেছে।
+বিতর্ক এমন একটি সহ: শিক্ষা কার্যক্রম যা একজন শিক্ষার্থীর সার্বিক মেধা ও ব্যাক্তিত্বের বিকাশে অনন্য ভূমিকা পালন করে।  এটি শিকার শক্তিশালী মাধ্যম।  DSDC এই মাধ্যমকে আরো শক্তিশালী এবং সময়পযোগী করে গড়ে তোলায় ভূমিকা পালন করবে সে চেস্টা এবং প্রয়োজনীয় পদক্ষেপ আমরা গ্রহণ করবো।
+DSDC এর হাত ধরে অনেক বিতার্কিক ও সংগঠক দেশ ও দেশের বাইরে বিতর্ক অংগনকে আলোকিত করছে। আগামী তেও ও ধারা বজায় থাকবে, এ আশা ব্যক্ত করছি।
+ধন্যবাদ`
+            }
+        ];
+
+        function openSpeechModal(mod, trigger) {
+            const photo = document.getElementById('speech-modal-photo');
+            photo.style.display = '';
+            photo.src = mod.image;
+            photo.alt = mod.name;
+            document.getElementById('speech-modal-title').textContent = mod.name;
+            document.getElementById('speech-modal-role').textContent = mod.designation;
+            const body = document.getElementById('speech-modal-body');
+            body.innerHTML = '';
+            // every line break starts a new paragraph; skip empty lines
+            const paras = (mod.speech || '').split('\n')
+                .map(function (l) { return l.trim(); }).filter(Boolean);
+            // Quote style ONLY for a paragraph fully wrapped in quotation
+            // marks: starts with " or “ and ends with " or ” (a trailing
+            // । or . after the closing mark is allowed). Lines like
+            // "ধন্যবাদ" or sentences containing an inline quote stay normal.
+            function isWrappedQuote(t) {
+                if (t.charAt(0) !== '"' && t.charAt(0) !== '\u201C') return false;
+                let end = t.slice(-1);
+                if (end === '।' || end === '.') end = t.slice(-2, -1);
+                return end === '"' || end === '\u201D';
+            }
+            paras.forEach(function (text) {
+                const p = document.createElement('p');
+                p.textContent = text; // never innerHTML with the raw speech text
+                p.className = 'mb-4 last:mb-0';
+                if (isWrappedQuote(text)) {
+                    p.className += ' speech-quote';
+                }
+                body.appendChild(p);
+            });
+            body.scrollTop = 0;
+            openModal('speech-modal', trigger);
+        }
+
+        function renderModerators() {
+            const grid = document.getElementById('moderators-grid');
+            if (!grid) return;
+            grid.innerHTML = MODERATORS.map(function (mod, i) {
+                const speechBtn = mod.speech
+                    ? '<div class="mt-auto pt-4"><button type="button" class="mod-read-msg self-start px-4 py-2 rounded-lg bg-primary/10 border border-primary/30 text-[#94ccff] text-[10px] md:text-[11px] font-bold uppercase tracking-widest hover:bg-primary/20 transition-colors cursor-pointer" data-mod-index="' + i + '">Read message</button></div>'
+                    : '';
+                return '' +
+                    '<div class="member-card mod-card group glass-card rounded-2xl overflow-hidden shadow-2xl">' +
+                        '<div class="mod-card-photo">' +
+                            '<div class="absolute inset-0 flex flex-col items-center justify-center gap-2">' +
+                                '<img src="' + PAST_EVENT_FALLBACK_LOGO + '" alt="" loading="lazy" class="w-12 opacity-70">' +
+                                '<span class="text-[9px] uppercase tracking-widest text-on-surface-variant/60 font-bold">DSDC</span>' +
+                            '</div>' +
+                            '<img loading="lazy" alt="' + escapeHtml(mod.name) + '" src="' + escapeHtml(mod.image) + '" onerror="this.style.display=\'none\'" class="image-zoom relative w-full h-full object-cover object-top transition-all duration-500">' +
+                        '</div>' +
+                        '<div class="mod-card-details">' +
+                            '<h3 class="text-on-surface text-xl md:text-2xl font-bold mb-2 leading-tight">' + escapeHtml(mod.name) + '</h3>' +
+                            '<span class="text-secondary text-[10px] md:text-[11px] uppercase tracking-widest mb-1 font-bold block">' + escapeHtml(mod.designation) + '</span>' +
+                            '<div class="h-px bg-white/10 my-3"></div>' +
+                            '<p class="moderator-email text-on-surface-variant text-xs font-body-md">' + escapeHtml(mod.email) + '</p>' +
+                            speechBtn +
+                        '</div>' +
+                    '</div>';
+            }).join('');
+            grid.querySelectorAll('.mod-read-msg').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const mod = MODERATORS[parseInt(btn.getAttribute('data-mod-index'), 10)];
+                    if (mod) openSpeechModal(mod, btn);
+                });
+            });
+        }
+        renderModerators();
+
+        // ============================================================
+        // About page stats — count up when scrolled into view.
+        // The correct number is already in the HTML (works without JS).
+        // 2015 is never animated; skipped entirely when the user prefers
+        // reduced motion.
+        // ============================================================
+        (function () {
+            const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (reduced || !('IntersectionObserver' in window)) return;
+            const nums = document.querySelectorAll('#page-about [data-count-to]');
+            if (!nums.length) return;
+            const io = new IntersectionObserver(function (entries) {
+                entries.forEach(function (entry) {
+                    if (!entry.isIntersecting) return;
+                    const el = entry.target;
+                    io.unobserve(el);
+                    const target = parseInt(el.getAttribute('data-count-to'), 10);
+                    if (!target) return;
+                    const start = performance.now();
+                    const dur = 900;
+                    el.textContent = '0';
+                    function step(now) {
+                        const t = Math.min(1, (now - start) / dur);
+                        el.textContent = String(Math.round(target * (1 - Math.pow(1 - t, 3))));
+                        if (t < 1) requestAnimationFrame(step);
+                        else el.textContent = String(target);
+                    }
+                    requestAnimationFrame(step);
+                });
+            }, { threshold: 0.4 });
+            nums.forEach(function (n) { io.observe(n); });
+        })();
 
         // Viewport Intersection Observer for scroll animations (Refactored to globally scoped listener)
         const revealObserver = new IntersectionObserver((entries) => {
