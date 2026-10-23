@@ -19,6 +19,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet">
     <!-- Bangla font fallback — used by the Past Events titles (Hanken Grotesk has no Bangla glyphs) -->
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;700;900&amp;display=swap" rel="stylesheet">
     
     <script id="tailwind-config">
@@ -745,7 +746,105 @@
                 transform: none !important;
             }
         }
+
+        /* ===== MOBILE REDESIGN (<=767px only; desktop untouched) ===== */
+        .nb-m-title,.nb-m-sub,.eyebrow-m,.hero-ico,.hm-deco,.mm-foot,#intro-loader{display:none}
+        @keyframes hm-rise{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
+        @keyframes mm-in{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+        @keyframes il-up{from{opacity:0;transform:translateY(60%)}to{opacity:1;transform:none}}
+        @keyframes il-draw{to{stroke-dashoffset:0}}
+        @keyframes il-pop{from{opacity:0;transform:scale(0)}to{opacity:1;transform:scale(1)}}
+        @keyframes il-grow{to{transform:scaleX(1)}}
+        @keyframes il-fade{to{opacity:1}}
+        @keyframes il-fs{to{opacity:0;visibility:hidden;pointer-events:none}}
+        @keyframes hm-float{from{transform:translateY(-8px) rotate(-28deg)}to{transform:translateY(8px) rotate(-25deg)}}
+        @keyframes hm-drift{from{transform:translate(0,0)}to{transform:translate(-18px,14px)}}
+        @keyframes hm-pulse{0%,100%{opacity:.2}50%{opacity:.9}}
+        @media (max-width:767px){
+            /* floating nav card */
+            #top-nav{top:0!important;left:0!important;right:0!important;width:100%!important;height:auto!important;padding:calc(12px + env(safe-area-inset-top,0px)) 12px 0!important;background:transparent!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;border:0!important;pointer-events:none}
+            #top-nav > div:first-child{pointer-events:auto;position:relative;z-index:101;height:68px;border-radius:20px;padding:0 12px 0 14px!important;background:rgba(24,30,54,.72);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid rgba(148,204,255,.14);box-shadow:0 8px 32px rgba(0,0,0,.35)}
+            .nb-logos .cl,.nb-logos .ndiv,.nav-brand-text .nb-orig{display:none!important}
+            .nb-logos .dl{height:58px!important;transform:scale(2)!important;transform-origin:left center;margin-right:42px!important}
+            .nav-brand-text{min-width:0}
+            .nb-m-title{display:none!important}
+            .nb-m-sub{display:block;margin-top:4px;font-family:'Space Mono',monospace;font-size:8.5px;letter-spacing:.07em;text-transform:uppercase;color:#bec7d3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:46vw}
+            html.intro-playing .nb-m-title{opacity:0}
+            .mobile-menu-toggle{width:44px;height:44px;padding:0!important;border-radius:12px;border:1.5px solid rgba(220,225,255,.8);background:transparent}
+            .hb{position:relative;display:block;width:20px;height:14px}
+            .hb i{position:absolute;left:0;width:100%;height:2px;border-radius:2px;background:#fff;transition:transform .3s,top .3s,opacity .2s}
+            .hb i:nth-child(1){top:0}.hb i:nth-child(2){top:6px}.hb i:nth-child(3){top:12px}
+            .mobile-menu-toggle[aria-expanded="true"] .hb i:nth-child(1){top:6px;transform:rotate(45deg)}
+            .mobile-menu-toggle[aria-expanded="true"] .hb i:nth-child(2){opacity:0}
+            .mobile-menu-toggle[aria-expanded="true"] .hb i:nth-child(3){top:6px;transform:rotate(-45deg)}
+            main{padding-top:92px!important}
+            /* overlay menu */
+            #mobileMenu{position:fixed!important;inset:0;top:0!important;width:100%;height:100vh;height:100svh;padding:110px 6vw 32px!important;gap:0!important;overflow-y:auto;pointer-events:auto;z-index:99;background:#0b1229!important;isolation:isolate;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;border:0!important;counter-reset:mm;background-image:linear-gradient(rgba(148,204,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(148,204,255,.05) 1px,transparent 1px)!important;background-size:56px 56px!important}
+            #mobileMenu.flex > *{animation:mm-in .5s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(var(--i,0)*60ms)}
+            #mobileMenu > *{flex-shrink:0!important}
+            #mobileMenu > a,#mobileMenu > div > button:not(.mm-join){font-family:'Hanken Grotesk',sans-serif!important;font-size:24px!important;font-style:italic;font-weight:900;text-transform:uppercase;letter-spacing:-.01em;color:#fff;padding:10px 0!important;min-height:0;border-bottom:1px solid rgba(255,255,255,.06)!important}
+            #mobileMenu > a::before,#mobileMenu > div > button:not(.mm-join) > span:first-child::before{content:none!important;display:none}
+            #mobileMenu #mobile-exec-submenu{display:flex!important;flex-direction:column;margin:0;padding:0 0 0 16px!important;max-height:0;opacity:0;overflow:hidden;transition:max-height .45s cubic-bezier(.22,1,.36,1),opacity .3s ease,padding .45s cubic-bezier(.22,1,.36,1)}
+            #mobileMenu #mobile-exec-submenu.is-open{max-height:360px;opacity:1;padding:2px 0 10px 16px!important}
+            #mobileMenu #mobile-exec-submenu a{font-family:'Hanken Grotesk',sans-serif;font-size:17px!important;font-style:italic;font-weight:900;text-transform:uppercase;letter-spacing:-.01em;color:#bec7d3;padding:12px 0!important;border-bottom:1px solid rgba(255,255,255,.06)}
+            #mobileMenu #mobile-exec-submenu a:hover{color:#94ccff}
+            .mm-foot{display:flex;flex-direction:column;gap:18px;margin-top:28px}
+            .mm-join{width:100%;min-height:56px;padding:0!important;border:0!important;border-radius:12px;background:#00a6fb;color:#fff;font-family:'Hanken Grotesk',sans-serif;font-weight:900;font-size:16px;letter-spacing:.12em;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 10px 30px rgba(0,166,251,.35)}
+            .mm-college{display:flex;align-items:center;gap:12px}
+            .mm-college img{height:36px;width:auto}
+            .mm-college span{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#bec7d3}
+            /* hero */
+            #hero{margin-top:-92px;min-height:100vh;min-height:100svh;align-items:stretch!important;justify-content:center!important;padding:220px 6vw 60px!important}
+            #hero > .relative.z-10{width:100%!important}
+            #hero::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background-image:linear-gradient(rgba(148,204,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(148,204,255,.05) 1px,transparent 1px);background-size:56px 56px}
+            #hero > .relative.z-10{text-align:left!important;margin:0!important;padding:0!important;max-width:100%}
+            #hero .hero-eyebrow{justify-content:flex-start!important;gap:14px!important;margin-bottom:22px!important}
+            #hero .hero-eyebrow > div:first-child{width:36px;height:2px;background:#00a6fb}
+            #hero .hero-eyebrow > div:last-child,#hero .hero-eyebrow > span:not(.eyebrow-m){display:none}
+            .eyebrow-m{display:inline;font-family:'Hanken Grotesk',sans-serif;font-weight:700;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#bec7d3}
+            #hero h1{font-size:10.5vw!important;font-style:italic!important;font-weight:900!important;line-height:.95!important;letter-spacing:-.03em;text-align:left;margin-bottom:22px!important;white-space:nowrap}
+            #hero h1 .hl1,#hero h1 .hl2{display:inline-block;white-space:nowrap}
+            #hero p.hero-sub{font-size:17px!important;line-height:1.7;max-width:34ch;margin:0 0 28px!important;text-align:left}
+            #hero .hero-cta{max-width:100%!important;width:100%!important;gap:12px!important;align-items:stretch}
+            #hero .hero-cta > *{min-height:56px;border-radius:12px;font-family:'Hanken Grotesk',sans-serif;font-weight:900;font-size:14px!important;letter-spacing:.12em!important;gap:10px}
+            #hero .hero-cta > a{background:transparent!important;border:2px solid rgba(220,225,255,.85)!important;color:#fff}
+            #hero .hero-cta > button{background:#00a6fb!important;color:#fff!important;box-shadow:0 10px 30px rgba(0,166,251,.35)}
+            .hero-ico{display:inline-block;font-size:20px}
+            .hero-chev{opacity:.6!important;cursor:pointer}
+            /* hero entrance (starts when intro ends) */
+            #hero .hm-a,#hero .hl1,#hero .hl2,#hero .hm-btns > *{opacity:0}
+            html:not(.intro-playing) #hero .hm-a,html:not(.intro-playing) #hero .hl1,html:not(.intro-playing) #hero .hl2,html:not(.intro-playing) #hero .hm-btns > *{animation:hm-rise .8s cubic-bezier(.22,1,.36,1) both;animation-delay:var(--d,0s)}
+            #hero .hl1{--d:.08s}#hero .hl2{--d:.18s}#hero .hero-sub{--d:.32s}#hero .hm-btns > :nth-child(1){--d:.46s}#hero .hm-btns > :nth-child(2){--d:.56s}
+            /* decorative layer */
+            .hm-deco{display:block;position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden}
+            .hm-orb{position:absolute;border-radius:50%}
+            .hm-orb1{width:130px;height:130px;top:150px;left:-30px;background:radial-gradient(circle,rgba(0,166,251,.16),transparent 70%)}
+            .hm-orb2{width:110px;height:110px;bottom:140px;right:-20px;background:radial-gradient(circle,rgba(233,196,0,.12),transparent 70%)}
+            .hm-const{position:absolute;inset:0;width:100%;height:100%}
+            .hm-p{animation:hm-pulse 4s ease-in-out infinite}
+            .hm-mic{position:absolute;top:60px;right:-70px;width:190px;height:auto;transform:rotate(-28deg);animation:hm-float 7s ease-in-out infinite alternate}
+            #hero > .relative.z-10{position:relative;z-index:5}
+            /* loader */
+            #intro-loader{display:block;position:fixed;inset:0;z-index:300;height:100vh;height:100svh;animation:il-fs .4s ease 4s forwards}
+            html.intro-seen #intro-loader{display:none}
+            .il-bg{position:absolute;inset:0;background:#0b1229;transition:opacity .6s ease;background-image:linear-gradient(rgba(148,204,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(148,204,255,.06) 1px,transparent 1px);background-size:56px 56px}
+            .il-stage{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+            .il-word{display:flex;font-size:64px;font-weight:900;line-height:1;letter-spacing:-.02em;color:#fff;text-shadow:0 0 20px rgba(0,166,251,.6);transition:transform .8s cubic-bezier(.22,1,.36,1)}
+            .il-word span{display:inline-block;opacity:0;animation:il-up .6s cubic-bezier(.22,1,.36,1) forwards}
+            .il-word span:nth-child(2){animation-delay:.12s}.il-word span:nth-child(3){animation-delay:.24s}.il-word span:nth-child(4){animation-delay:.36s}
+            .il-net{width:220px;height:64px;margin-top:6px;overflow:visible}
+            .il-net polyline{stroke:rgba(148,204,255,.5);stroke-width:1;stroke-dasharray:1;stroke-dashoffset:1;animation:il-draw .8s ease .7s forwards}
+            .il-net circle{fill:#00a6fb;transform-box:fill-box;transform-origin:center;opacity:0;animation:il-pop .3s ease forwards}
+            .il-net circle:nth-of-type(1){animation-delay:.7s}.il-net circle:nth-of-type(2){animation-delay:.9s}.il-net circle:nth-of-type(3){animation-delay:1.1s}.il-net circle:nth-of-type(4){animation-delay:1.3s}.il-net circle:nth-of-type(5){animation-delay:1.5s}
+            .il-line{width:80%;height:1px;background:#00a6fb;margin-top:8px;transform:scaleX(0);animation:il-grow .7s cubic-bezier(.22,1,.36,1) 1s forwards}
+            .il-tag{margin-top:16px;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#bec7d3;opacity:0;animation:il-fade .6s ease 1.3s forwards}
+            .il-exit .il-bg{opacity:0}
+            .il-exit .il-net,.il-exit .il-line,.il-exit .il-tag{opacity:0!important;transition:opacity .4s}
+            .il-exit .il-word{text-shadow:none}
+            @media (prefers-reduced-motion:reduce){#intro-loader{display:none}#hero .hm-a,#hero .hl1,#hero .hl2,#hero .hm-btns > *{opacity:1!important;animation:none!important}.hm-mic,.hm-p,.hero-chev{animation:none!important}.hm-mic{transform:rotate(-28deg)}}
+        }
     </style>
+    <script>(function(){var d=document.documentElement;try{var m=matchMedia('(max-width:767px)').matches,r=matchMedia('(prefers-reduced-motion: reduce)').matches;if(!m||r||sessionStorage.getItem('dsdcIntro')){d.classList.add('intro-seen')}else{d.classList.add('intro-playing');setTimeout(function(){d.classList.remove('intro-playing')},4600)}}catch(e){d.classList.add('intro-seen')}})();</script>
     <script>document.fonts && document.fonts.ready.then(function(){document.documentElement.classList.add('fonts-loaded'); document.querySelectorAll('.material-symbols-outlined').forEach(function(el){el.style.visibility='visible';});});</script>
 
     <!-- ============================================================
@@ -922,6 +1021,7 @@
 </head>
 <body class="bg-surface text-on-surface selection:bg-primary-container selection:text-on-primary-container font-hanken overflow-x-hidden">
     
+    <div id="intro-loader" aria-hidden="true"><div class="il-bg"></div><div class="il-stage"><div class="il-word"><span>D</span><span>S</span><span>D</span><span>C</span></div><svg class="il-net" viewBox="0 0 220 64" fill="none"><polyline points="30,4 70,52 110,22 150,52 190,4" pathLength="1"/><circle cx="30" cy="4" r="3"/><circle cx="70" cy="52" r="3"/><circle cx="110" cy="22" r="3"/><circle cx="150" cy="52" r="3"/><circle cx="190" cy="4" r="3"/></svg><div class="il-line"></div><div class="il-tag">Reason over Rhetoric</div></div></div>
     <!-- Immersive Background Layers -->
     <div id="nebula-layer" class="fixed inset-0 overflow-hidden pointer-events-none z-[-2]">
         <canvas id="particle-canvas"></canvas>
@@ -943,7 +1043,8 @@
                     <img loading="lazy" class="dl h-12 md:h-20 w-auto object-contain shrink-0 transform scale-110" src="https://res.cloudinary.com/dd1x7wc7y/image/upload/v1779793489/1-removebg-preview_rwymms.png" alt="DSDC Wing Logo">
                 </div>
                 <div class="nav-brand-text hidden lg:flex flex-col justify-center text-left shrink-0">
-                    <span class="text-white/60 tracking-[0.25em] uppercase text-[9px] md:text-[10px] font-extrabold max-w-[120px] md:max-w-none leading-tight font-hanken">
+                    <span class="nb-m-title">DSDC</span><span class="nb-m-sub">Dhaka Shaheen Debating Club</span>
+                    <span class="nb-orig text-white/60 tracking-[0.25em] uppercase text-[9px] md:text-[10px] font-extrabold max-w-[120px] md:max-w-none leading-tight font-hanken">
                         DHAKA SHAHEEN<br>DEBATING CLUB
                     </span>
                 </div>
@@ -995,9 +1096,7 @@
             </div>
 
             <!-- Hamburger Button for Mobile -->
-            <button class="md:hidden mobile-menu-toggle text-white p-2 shrink-0" onclick="toggleMobileMenu()" aria-label="Menu" aria-expanded="false" aria-controls="mobileMenu">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
-            </button>
+            <button class="md:hidden mobile-menu-toggle text-white p-2 shrink-0" onclick="toggleMobileMenu()" aria-label="Menu" aria-expanded="false" aria-controls="mobileMenu"><span class="hb" aria-hidden="true"><i></i><i></i><i></i></span></button>
 
         </div>
 
@@ -1011,7 +1110,7 @@
                     <span>Leaders</span>
                     <span class="material-symbols-outlined text-sm transition-transform duration-300" id="mobile-exec-arrow">keyboard_arrow_down</span>
                 </button>
-                <div id="mobile-exec-submenu" class="hidden flex-col pl-4 pb-2 gap-2 max-h-80 overflow-y-auto pr-2" style="scrollbar-width: thin; scrollbar-color: rgba(91,191,219,0.3) transparent;">
+                <div id="mobile-exec-submenu" class="flex-col pr-2" style="scrollbar-width: thin; scrollbar-color: rgba(91,191,219,0.3) transparent;">
                     <a class="text-on-surface-variant/80 hover:text-primary py-1 block uppercase tracking-widest text-[10px] font-semibold" href="#leaders-moderators" onclick="closeMobileMenu()">Moderators</a>
                     <a class="text-on-surface-variant/80 hover:text-primary py-1 block uppercase tracking-widest text-[10px] font-semibold" href="#leaders-founders" onclick="closeMobileMenu()">Founders</a>
                     <a class="text-on-surface-variant/80 hover:text-primary py-1 block uppercase tracking-widest text-[10px] font-semibold" href="#leaders-executives" onclick="closeMobileMenu()">Executives</a>
@@ -1024,6 +1123,10 @@
             <a id="mobile-nav-courses" class="text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2 border-b border-white/5" href="#courses" onclick="closeMobileMenu()">Courses</a>
             <a id="mobile-nav-contact" class="text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2" href="#contact" onclick="closeMobileMenu()">Contact</a>
 
+            <div class="mm-foot">
+                <button type="button" data-modal-open="join-modal" onclick="closeMobileMenu()" class="mm-join">JOIN DSDC <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button>
+                <div class="mm-college"><img loading="lazy" src="https://res.cloudinary.com/dd1x7wc7y/image/upload/v1779793138/KsMfljTl_dnnomh.webp" alt="BAF Shaheen College Logo"><span>BAF Shaheen College Dhaka</span></div>
+            </div>
             <!-- Admin mobile (only shown when an admin is logged in) -->
             <div id="mobile-nav-user" class="hidden flex-col gap-2 py-2 border-t border-white/5 mt-2">
                 <span id="mobile-nav-user-name" class="text-primary text-[11px] font-bold tracking-widest uppercase"></span>
@@ -1044,29 +1147,35 @@
             
             <!-- Hero Section -->
             <section id="hero" class="relative min-h-[90vh] md:min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 md:px-16 overflow-hidden py-12 md:py-16">
+                <div class="hm-deco" aria-hidden="true">
+                    <div class="hm-orb hm-orb1"></div><div class="hm-orb hm-orb2"></div>
+                    <svg class="hm-const" viewBox="0 0 390 800" preserveAspectRatio="xMidYMid slice" fill="none"><g stroke="rgba(148,204,255,.18)"><path d="M40 120L120 210L90 330L200 380"/><path d="M200 380L320 330L350 470"/><path d="M120 210L250 150L320 330"/><path d="M60 620L170 560L300 640L340 560"/></g><g fill="#94ccff"><circle cx="40" cy="120" r="2.5" opacity=".5"/><circle cx="120" cy="210" r="3" class="hm-p" opacity=".5"/><circle cx="90" cy="330" r="2" opacity=".4"/><circle cx="200" cy="380" r="3" opacity=".5"/><circle cx="320" cy="330" r="2.5" class="hm-p" opacity=".5"/><circle cx="350" cy="470" r="2" opacity=".4"/><circle cx="250" cy="150" r="2" opacity=".4"/><circle cx="60" cy="620" r="2" class="hm-p" opacity=".4"/><circle cx="170" cy="560" r="2.5" opacity=".4"/><circle cx="300" cy="640" r="2" opacity=".4"/></g></svg>
+                    <svg class="hm-mic" viewBox="0 0 160 310" fill="none"><defs><linearGradient id="mg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2d344c"/><stop offset="1" stop-color="#121830"/></linearGradient><pattern id="mh" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 0V8" stroke="rgba(148,204,255,.22)" stroke-width="1"/></pattern></defs><rect x="40" y="8" width="80" height="150" rx="40" fill="url(#mg)" stroke="rgba(148,204,255,.55)" stroke-width="1.5"/><rect x="40" y="8" width="80" height="150" rx="40" fill="url(#mh)"/><rect x="36" y="84" width="88" height="9" rx="4.5" fill="#e9c400" opacity=".85"/><path d="M26 118v34a54 54 0 0 0 108 0v-34" stroke="rgba(148,204,255,.55)" stroke-width="5" stroke-linecap="round"/><rect x="76" y="206" width="8" height="84" rx="4" fill="#1d2440" stroke="rgba(148,204,255,.4)"/><rect x="46" y="290" width="68" height="10" rx="5" fill="#1d2440" stroke="rgba(148,204,255,.4)"/></svg>
+                </div>
                 <div class="absolute inset-0 z-0">
                     <img loading="lazy" alt="BAF Shaheen College Gate" class="w-full h-full object-cover opacity-30 grayscale brightness-75" src="https://res.cloudinary.com/dd1x7wc7y/image/upload/v1779786431/college_gate_qvqgku.jpg">
                     <div class="absolute inset-0 hero-overlay"></div>
                 </div>
                 <div class="relative z-10 text-center reveal active max-w-5xl mx-auto px-2">
-                    <div class="flex items-center justify-center gap-3 md:gap-4 mb-6 md:mb-8 hero-eyebrow">
+                    <div class="flex items-center justify-center gap-3 md:gap-4 mb-6 md:mb-8 hero-eyebrow hm-a" style="--d:.0s">
                         <div class="h-[1px] w-8 md:w-12 bg-primary/30"></div>
+                        <span class="eyebrow-m">Est. 2015 · Dhaka, Bangladesh</span>
                         <span class="text-primary tracking-[0.25em] md:tracking-[0.4em] uppercase text-[10px] md:text-xs font-black" style="font-size: 10px;">BAF Shaheen College Dhaka</span>
                         <div class="h-[1px] w-8 md:w-12 bg-primary/30"></div>
                     </div>
                     <h1 class="text-4xl sm:text-6xl md:text-8xl lg:text-[100px] xl:text-[110px] text-white tracking-tighter leading-[0.95] md:leading-[0.9] mb-8 md:mb-10 font-black italic uppercase" style="font-size: 82px;">
-                        Dhaka Shaheen<br>
-                        <span class="text-gradient-cyan glow-cyan glow-title-fix">Debating Club</span>
+                        <span class="hl1">Dhaka Shaheen</span><br>
+                        <span class="hl2 text-gradient-cyan glow-cyan glow-title-fix">Debating Club</span>
                     </h1>
-                    <p class="text-base sm:text-lg md:text-xl lg:text-2xl text-on-surface-variant max-w-3xl mx-auto mb-8 md:mb-12 leading-relaxed hero-sub" style="font-size: 16px;">
+                    <p class="text-base sm:text-lg md:text-xl lg:text-2xl text-on-surface-variant max-w-3xl mx-auto mb-8 md:mb-12 leading-relaxed hero-sub hm-a" style="font-size: 16px;">
                         Empowering Shaheens to think <span class="text-primary italic font-semibold">critically</span>, speak <span class="text-primary italic font-semibold">boldly</span>, and lead with <span class="text-primary italic font-semibold" style="font-size: 16px;"><br>conviction<br></span>
                     </p>
-                    <div class="flex flex-col sm:flex-row justify-center gap-4 md:gap-6 max-w-xs sm:max-w-none mx-auto w-full sm:w-auto hero-cta">
-                        <button type="button" data-modal-open="join-modal" class="bg-primary-container text-on-primary-container px-8 md:px-12 py-4 md:py-5 font-black text-xs md:text-sm tracking-[0.2em] rounded-xl hover:shadow-[0_0_40px_rgba(0,166,251,0.5)] transition-all flex items-center justify-center gap-3 group uppercase w-full sm:w-auto cursor-pointer" style="width: 158.567px; font-size: 10px; letter-spacing: 1.2px; height: 52px;">JOIN DSDC</button>
-                        <a class="glass-card text-on-surface px-8 md:px-12 py-4 md:py-5 font-black text-xs md:text-sm tracking-[0.2em] rounded-xl hover:bg-white/10 transition-all uppercase border-white/10 w-full sm:w-auto flex items-center justify-center" href="#about-us" style="width: 158.417px; height: 52px; font-size: 10px; letter-spacing: 1px;">Legacy</a>
+                    <div class="hm-btns flex flex-col sm:flex-row justify-center gap-4 md:gap-6 max-w-xs sm:max-w-none mx-auto w-full sm:w-auto hero-cta">
+                        <button type="button" data-modal-open="join-modal" class="bg-primary-container text-on-primary-container px-8 md:px-12 py-4 md:py-5 font-black text-xs md:text-sm tracking-[0.2em] rounded-xl hover:shadow-[0_0_40px_rgba(0,166,251,0.5)] transition-all flex items-center justify-center gap-3 group uppercase w-full sm:w-auto cursor-pointer" style="width: 158.567px; font-size: 10px; letter-spacing: 1.2px; height: 52px;">JOIN DSDC<span class="material-symbols-outlined hero-ico" aria-hidden="true">arrow_forward</span></button>
+                        <a class="glass-card text-on-surface px-8 md:px-12 py-4 md:py-5 font-black text-xs md:text-sm tracking-[0.2em] rounded-xl hover:bg-white/10 transition-all uppercase border-white/10 w-full sm:w-auto flex items-center justify-center" href="#about-us" style="width: 158.417px; height: 52px; font-size: 10px; letter-spacing: 1px;">Legacy<span class="material-symbols-outlined hero-ico" aria-hidden="true">history_edu</span></a>
                     </div>
                 </div>
-                <div class="absolute bottom-6 md:bottom-10 left-1/2 -translate-x-1/2 animate-bounce opacity-30">
+                <div class="hero-chev absolute bottom-6 md:bottom-10 left-1/2 -translate-x-1/2 animate-bounce opacity-30" onclick="this.closest('section').nextElementSibling.scrollIntoView({behavior:'smooth'})">
                     <span class="material-symbols-outlined text-primary text-3xl md:text-4xl">keyboard_double_arrow_down</span>
                 </div>
             </section>
@@ -3495,6 +3604,16 @@
             }
         }
 
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && !document.getElementById('mobileMenu').classList.contains('hidden')) closeMobileMenu(); });
+        window.addEventListener('hashchange', () => { const m = document.getElementById('mobileMenu'); if (m && !m.classList.contains('hidden')) closeMobileMenu(); });
+        (function(){var L=document.getElementById('intro-loader'),done=false;
+          function fire(){window.__dsdcIntroDone=true;document.documentElement.classList.remove('intro-playing');window.dispatchEvent(new Event('dsdc:intro-done'));}
+          if(!L||document.documentElement.classList.contains('intro-seen')){if(L)L.remove();fire();return;}
+          try{sessionStorage.setItem('dsdcIntro','1');}catch(e){}
+          function finish(){if(done)return;done=true;try{var w=L.querySelector('.il-word'),t=document.querySelector('.nb-m-title');if(w&&t){var a=w.getBoundingClientRect(),b=t.getBoundingClientRect();if(b.width){w.style.transformOrigin='0 0';w.style.transform='translate('+(b.left-a.left)+'px,'+(b.top-a.top)+'px) scale('+(b.width/a.width)+')';}}}catch(e){}L.classList.add('il-exit');setTimeout(function(){L.remove();fire();},900);}
+          setTimeout(finish,2100);L.addEventListener('click',finish);
+          setTimeout(function(){if(L.parentNode){L.remove();fire();}},4000);
+        })();
         function toggleMobileMenu() {
             const menu = document.getElementById('mobileMenu');
             const toggle = document.querySelector('.mobile-menu-toggle');
@@ -3502,6 +3621,9 @@
             menu.classList.toggle('flex');
             const isOpen = !menu.classList.contains('hidden');
             if (toggle) toggle.setAttribute('aria-expanded', isOpen);
+            document.body.style.overflow = isOpen ? 'hidden' : '';
+            if (isOpen) { Array.from(menu.children).forEach((el,i)=>el.style.setProperty('--i',i)); const f = menu.querySelector('a'); if (f) f.focus({preventScroll:true}); }
+            else if (toggle) toggle.focus({preventScroll:true});
         }
 
         function closeMobileMenu() {
@@ -3509,14 +3631,14 @@
             const toggle = document.querySelector('.mobile-menu-toggle');
             menu.classList.add('hidden');
             menu.classList.remove('flex');
+            document.body.style.overflow = '';
             if (toggle) toggle.setAttribute('aria-expanded', 'false');
             
             // Reset mobile dropdown accordion when side panel hides
             const submenu = document.getElementById('mobile-exec-submenu');
             const arrow = document.getElementById('mobile-exec-arrow');
             if (submenu && arrow) {
-                submenu.classList.add('hidden');
-                submenu.classList.remove('flex');
+                submenu.classList.remove('is-open');
                 arrow.classList.remove('rotate-180');
             }
         }
@@ -3526,13 +3648,11 @@
             event.preventDefault();
             const submenu = document.getElementById('mobile-exec-submenu');
             const arrow = document.getElementById('mobile-exec-arrow');
-            if (submenu.classList.contains('hidden')) {
-                submenu.classList.remove('hidden');
-                submenu.classList.add('flex');
+            if (!submenu.classList.contains('is-open')) {
+                submenu.classList.add('is-open');
                 arrow.classList.add('rotate-180');
             } else {
-                submenu.classList.add('hidden');
-                submenu.classList.remove('flex');
+                submenu.classList.remove('is-open');
                 arrow.classList.remove('rotate-180');
             }
         }
