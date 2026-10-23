@@ -4428,6 +4428,7 @@
             }
         }
 
+        let coursesLoaded = false;
         async function loadCourses() {
             // Public: everyone (logged in or not) can read the course list
             const list = document.getElementById('courses-list');
@@ -4446,6 +4447,7 @@
                 return;
             }
             coursesCache = data || [];
+            coursesLoaded = true;
             // Ensure current level is valid for user
             updateCoursesSwitcherVisibility();
             renderCourses();
@@ -4455,6 +4457,11 @@
             const list = document.getElementById('courses-list');
             const empty = document.getElementById('courses-empty');
             if (!list) return;
+            if (!coursesLoaded) {
+                if (empty) empty.classList.add('hidden');
+                list.innerHTML = '<p class="text-center text-on-surface-variant text-sm py-8">Loading courses…</p>';
+                return;
+            }
             // Filter by current level
             const filtered = coursesCache.filter(c => (c.level||'').toLowerCase() === currentCourseLevel);
             if (filtered.length === 0) {
@@ -4467,7 +4474,7 @@
                 const isYT = (c.video_type||'').toLowerCase() === 'youtube';
                 const ytId = isYT ? parseYouTubeId(c.video_url) : null;
                 const videoHtml = isYT && ytId
-                    ? `<div class="aspect-video w-full bg-black rounded-xl overflow-hidden"><iframe class="w-full h-full" src="https://www.youtube.com/embed/${ytId}" title="${escapeHtml(c.title)}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>`
+                    ? `<div class="yt-facade aspect-video w-full bg-black rounded-xl overflow-hidden relative cursor-pointer group" data-yt="${ytId}" data-title="${escapeHtml(c.title)}" role="button" tabindex="0" aria-label="Play ${escapeHtml(c.title)}"><img src="https://i.ytimg.com/vi/${ytId}/hqdefault.jpg" alt="" loading="lazy" decoding="async" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"><span class="absolute inset-0 flex items-center justify-center pointer-events-none"><span class="w-14 h-14 md:w-16 md:h-16 rounded-full bg-[#FF0000] flex items-center justify-center shadow-lg"><svg viewBox="0 0 24 24" class="w-6 h-6 md:w-7 md:h-7 ml-1" fill="#fff" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></span></span></div>`
                     : isYT
                         ? `<a href="${escapeHtml(c.video_url)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-2 bg-primary-container text-on-primary rounded-full text-xs font-bold uppercase tracking-widest">Watch on YouTube →</a>`
                         : `<a href="${escapeHtml(c.video_url)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-2 bg-primary-container text-on-primary rounded-full text-xs font-bold uppercase tracking-widest"><span class="material-symbols-outlined text-sm">open_in_new</span> Watch on Drive</a>`;
@@ -4502,6 +4509,22 @@
 
         window.switchCourseLevel = switchCourseLevel;
         window.loadCourses = loadCourses;
+        (function(){
+            const box = document.getElementById('courses-list');
+            if (!box) return;
+            function play(f){
+                const ifr = document.createElement('iframe');
+                ifr.className = 'w-full h-full';
+                ifr.src = 'https://www.youtube.com/embed/' + f.dataset.yt + '?autoplay=1';
+                ifr.title = f.dataset.title || 'Course video';
+                ifr.setAttribute('frameborder', '0');
+                ifr.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
+                ifr.setAttribute('allowfullscreen', '');
+                f.replaceWith(ifr);
+            }
+            box.addEventListener('click', function(e){ const f = e.target.closest('.yt-facade'); if (f) play(f); });
+            box.addEventListener('keydown', function(e){ const f = e.target.closest('.yt-facade'); if (f && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); play(f); } });
+        })();
 
         // ============================================================
         // PART A — Facebook icons on the current (latest) EC panel (#tab-xi).
