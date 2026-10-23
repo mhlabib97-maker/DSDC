@@ -509,6 +509,33 @@
             }
         }
 
+        /* Founding Moderator — one centered card above the 2x2 grid.
+           Width = exactly one grid column on md+ (grid max 64rem, 2 cols,
+           2rem gap -> 50% - 1rem); full width (stacked) on mobile. */
+        #founding-moderator-slot {
+            max-width: 64rem;
+            margin: 0 auto 1.5rem;
+        }
+        #founding-moderator-slot:empty {
+            display: none;
+        }
+        @media (min-width: 768px) {
+            #founding-moderator-slot {
+                margin-bottom: 2rem;
+            }
+            #founding-moderator-slot .mod-card {
+                width: calc(50% - 1rem);
+                margin: 0 auto;
+            }
+        }
+        /* Slightly stronger cyan border + glow than the regular cards */
+        .founding-mod-card {
+            border-color: rgba(0, 166, 251, 0.45);
+            box-shadow: inset 0 0 20px rgba(148, 204, 255, 0.05),
+                        0 0 28px rgba(0, 166, 251, 0.18),
+                        0 12px 32px rgba(0, 0, 0, 0.35);
+        }
+
         .nav-link {
             position: relative;
         }
@@ -516,11 +543,36 @@
             content: '';
             position: absolute;
             bottom: -4px;
-            left: 0;
+            left: 6px;
             width: 0;
             height: 2px;
             background-color: #00a6fb;
             transition: width 0.3s ease;
+        }
+
+        /* Desktop nav spacing — even flex gap + a little horizontal padding
+           per link (click target). The underline spans the LABEL only:
+           left:6px + width calc(100% - 12px) cancels the 6px padding, so
+           it never grows wider than the text. */
+        .nav-links {
+            gap: clamp(8px, 1.7vw, 26px) !important;
+        }
+        .nav-links .nav-link {
+            padding-left: 6px;
+            padding-right: 6px;
+        }
+        .nav-link.nav-active::after {
+            width: calc(100% - 12px);
+        }
+        /* Extra breathing room between CONTACT and the profile avatar */
+        #nav-auth-desktop {
+            margin-left: clamp(8px, 1vw, 20px);
+        }
+        /* Smaller laptops: ease the gap off so the bar never crowds the logo */
+        @media (min-width: 768px) and (max-width: 1279px) {
+            .nav-links {
+                gap: clamp(6px, 1.4vw, 16px) !important;
+            }
         }
 
         @media (max-width: 767px) {
@@ -629,7 +681,7 @@
                 transform: scale(1.05);
             }
             .nav-link:hover::after {
-                width: 100%;
+                width: calc(100% - 12px);
             }
             .dropdown a:hover {
                 color: #94ccff;
@@ -899,7 +951,7 @@
 
             <!-- Desktop Nav Links -->
             <div class="hidden md:flex gap-1.5 lg:gap-3 xl:gap-5 items-center text-[10px] lg:text-[11px] uppercase tracking-[0.05em] xl:tracking-widest nav-links font-hanken font-bold whitespace-nowrap">
-                <a class="nav-link text-primary font-black border-b-2 border-primary pb-1" id="nav-link-home" href="#home">Home</a>
+                <a class="nav-link text-primary font-black nav-active" id="nav-link-home" href="#home">Home</a>
                 <a class="nav-link text-on-surface-variant hover:text-primary transition-all" id="nav-link-about" href="#about-us">About Us</a>
 
                 <!-- Leaders: hover opens on desktop, click toggles (never navigates) -->
@@ -915,7 +967,6 @@
 
                 <a class="nav-link text-on-surface-variant hover:text-primary transition-all" id="nav-link-events" href="#events">Events</a>
                 <a class="nav-link text-on-surface-variant hover:text-primary transition-all" id="nav-link-achieve" href="#achievements">Achievements</a>
-                <a class="nav-link text-on-surface-variant hover:text-primary transition-all" id="nav-link-archive" href="#archive">Archive</a>
                 <a class="nav-link text-on-surface-variant hover:text-primary transition-all" id="nav-courses" href="#courses">Courses</a>
                 <a class="nav-link text-on-surface-variant hover:text-primary transition-all" id="nav-link-contact" href="#contact">Contact</a>
 
@@ -970,7 +1021,6 @@
 
             <a class="text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2 border-b border-white/5" href="#events" onclick="closeMobileMenu()">Events</a>
             <a class="text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2 border-b border-white/5" href="#achievements" onclick="closeMobileMenu()">Achievements</a>
-            <a class="text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2 border-b border-white/5" href="#archive" onclick="closeMobileMenu()">Archive</a>
             <a id="mobile-nav-courses" class="text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2 border-b border-white/5" href="#courses" onclick="closeMobileMenu()">Courses</a>
             <a id="mobile-nav-contact" class="text-on-surface-variant hover:text-primary transition-all uppercase tracking-widest text-[11px] font-bold py-2" href="#contact" onclick="closeMobileMenu()">Contact</a>
 
@@ -1621,6 +1671,18 @@
                             <p class="text-on-surface-variant text-xs md:text-sm font-body-md">Fostering equitable platforms and code of ethics.</p>
                         </div>
 
+<!-- Mariam Menerin -->
+                        <div class="member-card group glass-card rounded-2xl overflow-hidden flex flex-col shadow-xl p-5 md:p-6 border-l-4 border-primary/40 hover:border-primary transition-all duration-300">
+                            <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">Secretary of Debate and Workshop</span>
+                            <h3 class="text-white text-lg md:text-2xl font-black italic tracking-tight mb-1">Mariam Menerin</h3>
+                        </div>
+
+<!-- Abrar Alvi -->
+                        <div class="member-card group glass-card rounded-2xl overflow-hidden flex flex-col shadow-xl p-5 md:p-6 border-l-4 border-primary/40 hover:border-primary transition-all duration-300">
+                            <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">Secretary of IT</span>
+                            <h3 class="text-white text-lg md:text-2xl font-black italic tracking-tight mb-1">Abrar Alvi</h3>
+                        </div>
+
                     </div>
                 </section>
             </div>
@@ -1728,6 +1790,30 @@
                             <p class="text-on-surface-variant text-xs md:text-sm font-body-md">Fostering diverse inclusion across English wings.</p>
                         </div>
 
+<!-- Moshiur Masuk -->
+                        <div class="member-card group glass-card rounded-2xl overflow-hidden flex flex-col shadow-xl p-5 md:p-6 border-l-4 border-primary/40 hover:border-primary transition-all duration-300">
+                            <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">Secretary of IT and Publication</span>
+                            <h3 class="text-white text-lg md:text-2xl font-black italic tracking-tight mb-1">Moshiur Masuk</h3>
+                        </div>
+
+<!-- Tanzeem Mubin -->
+                        <div class="member-card group glass-card rounded-2xl overflow-hidden flex flex-col shadow-xl p-5 md:p-6 border-l-4 border-primary/40 hover:border-primary transition-all duration-300">
+                            <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">Equity Officer (English Wing)</span>
+                            <h3 class="text-white text-lg md:text-2xl font-black italic tracking-tight mb-1">Tanzeem Mubin</h3>
+                        </div>
+
+<!-- Saif Siam -->
+                        <div class="member-card group glass-card rounded-2xl overflow-hidden flex flex-col shadow-xl p-5 md:p-6 border-l-4 border-primary/40 hover:border-primary transition-all duration-300">
+                            <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">Office Secretary</span>
+                            <h3 class="text-white text-lg md:text-2xl font-black italic tracking-tight mb-1">Saif Siam</h3>
+                        </div>
+
+<!-- Sahib Abdullah -->
+                        <div class="member-card group glass-card rounded-2xl overflow-hidden flex flex-col shadow-xl p-5 md:p-6 border-l-4 border-primary/40 hover:border-primary transition-all duration-300">
+                            <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">Equity Officer (Bangla Wing)</span>
+                            <h3 class="text-white text-lg md:text-2xl font-black italic tracking-tight mb-1">Sahib Abdullah</h3>
+                        </div>
+
                     </div>
                 </section>
             </div>
@@ -1737,87 +1823,107 @@
             <div id="tab-vii" class="ec-panel">
                 <section class="px-4 sm:px-6 md:px-16 max-w-7xl mx-auto mb-12">
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 max-w-md sm:max-w-none mx-auto w-full">
-                        <!-- Faizul Kabir -->
+<!-- Sanjana Afrin -->
+                        <div class="member-card group glass-card rounded-2xl overflow-hidden flex flex-col shadow-xl p-5 md:p-6 border-l-4 border-primary/40 hover:border-primary transition-all duration-300">
+                            <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">President</span>
+                            <h3 class="text-white text-lg md:text-2xl font-black italic tracking-tight mb-1">Sanjana Afrin</h3>
+                        </div>
+<!-- Md Rizwan Sakline Khan -->
+                        <div class="member-card group glass-card rounded-2xl overflow-hidden flex flex-col shadow-xl p-5 md:p-6 border-l-4 border-primary/40 hover:border-primary transition-all duration-300">
+                            <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">General Secretary</span>
+                            <h3 class="text-white text-lg md:text-2xl font-black italic tracking-tight mb-1">Md Rizwan Sakline Khan</h3>
+                        </div>
+<!-- Syeda Zahrah Kader Achol -->
+                        <div class="member-card group glass-card rounded-2xl overflow-hidden flex flex-col shadow-xl p-5 md:p-6 border-l-4 border-primary/40 hover:border-primary transition-all duration-300">
+                            <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">Vice President (English Wing)</span>
+                            <h3 class="text-white text-lg md:text-2xl font-black italic tracking-tight mb-1">Syeda Zahrah Kader Achol</h3>
+                        </div>
+<!-- Namira Tahsin Haque -->
+                        <div class="member-card group glass-card rounded-2xl overflow-hidden flex flex-col shadow-xl p-5 md:p-6 border-l-4 border-primary/40 hover:border-primary transition-all duration-300">
+                            <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">General Secretary (English Wing)</span>
+                            <h3 class="text-white text-lg md:text-2xl font-black italic tracking-tight mb-1">Namira Tahsin Haque</h3>
+                        </div>
+<!-- Faizul Kabir -->
                         <div class="member-card group glass-card rounded-2xl overflow-hidden flex flex-col shadow-xl p-5 md:p-6 border-l-4 border-primary/40 hover:border-primary transition-all duration-300">
                             <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">Joint Secretary (Bangla Wing)</span>
                             <h3 class="text-white text-lg md:text-2xl font-black italic tracking-tight mb-1">Faizul Kabir</h3>
                         </div>
-                        <!-- Tarannum Tahseen -->
+<!-- Tarannum Tahseen -->
                         <div class="member-card group glass-card rounded-2xl overflow-hidden flex flex-col shadow-xl p-5 md:p-6 border-l-4 border-primary/40 hover:border-primary transition-all duration-300">
                             <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">Joint Secretary (English Wing)</span>
                             <h3 class="text-white text-lg md:text-2xl font-black italic tracking-tight mb-1">Tarannum Tahseen</h3>
                         </div>
-                        <!-- Muballik Iram -->
+<!-- Muballik Iram -->
                         <div class="member-card group glass-card rounded-2xl overflow-hidden flex flex-col shadow-xl p-5 md:p-6 border-l-4 border-primary/40 hover:border-primary transition-all duration-300">
                             <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">Vice President (Bangla Wing)</span>
                             <h3 class="text-white text-lg md:text-2xl font-black italic tracking-tight mb-1">Muballik Iram</h3>
                         </div>
-                        <!-- Khanjahan Karim Elman -->
+<!-- Khanjahan Karim Elman -->
                         <div class="member-card group glass-card rounded-2xl overflow-hidden flex flex-col shadow-xl p-5 md:p-6 border-l-4 border-primary/40 hover:border-primary transition-all duration-300">
                             <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">Organizing Secretary (English Wing)</span>
                             <h3 class="text-white text-lg md:text-2xl font-black italic tracking-tight mb-1">Khanjahan Karim Elman</h3>
                         </div>
-                        <!-- Sabikun Nahar Shifa -->
+<!-- Sabikun Nahar Shifa -->
                         <div class="member-card group glass-card rounded-2xl overflow-hidden flex flex-col shadow-xl p-5 md:p-6 border-l-4 border-primary/40 hover:border-primary transition-all duration-300">
                             <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">Organizing Secretary (Bangla Wing)</span>
                             <h3 class="text-white text-lg md:text-2xl font-black italic tracking-tight mb-1">Sabikun Nahar Shifa</h3>
                         </div>
-                        <!-- Jabir Bin Mahbub -->
+<!-- Jabir Bin Mahbub -->
                         <div class="member-card group glass-card rounded-2xl overflow-hidden flex flex-col shadow-xl p-5 md:p-6 border-l-4 border-primary/40 hover:border-primary transition-all duration-300">
                             <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">Assistant General Secretary (English Wing)</span>
                             <h3 class="text-white text-lg md:text-2xl font-black italic tracking-tight mb-1">Jabir Bin Mahbub</h3>
                         </div>
-                        <!-- Mahia Jabeen -->
+<!-- Mahia Jabeen -->
                         <div class="member-card group glass-card rounded-2xl overflow-hidden flex flex-col shadow-xl p-5 md:p-6 border-l-4 border-primary/40 hover:border-primary transition-all duration-300">
                             <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">Equity Officer (Bangla Wing)</span>
                             <h3 class="text-white text-lg md:text-2xl font-black italic tracking-tight mb-1">Mahia Jabeen</h3>
                         </div>
-                        <!-- Anika Mahzabin -->
+<!-- Anika Mahzabin -->
                         <div class="member-card group glass-card rounded-2xl overflow-hidden flex flex-col shadow-xl p-5 md:p-6 border-l-4 border-primary/40 hover:border-primary transition-all duration-300">
                             <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">Equity Officer (Bangla Wing)</span>
                             <h3 class="text-white text-lg md:text-2xl font-black italic tracking-tight mb-1">Anika Mahzabin</h3>
                         </div>
-                        <!-- Karishma Jahan -->
+<!-- Karishma Jahan -->
                         <div class="member-card group glass-card rounded-2xl overflow-hidden flex flex-col shadow-xl p-5 md:p-6 border-l-4 border-primary/40 hover:border-primary transition-all duration-300">
                             <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">Equity Officer (English Wing)</span>
                             <h3 class="text-white text-lg md:text-2xl font-black italic tracking-tight mb-1">Karishma Jahan</h3>
                         </div>
-                        <!-- Sami Hossain -->
+<!-- Sami Hossain -->
                         <div class="member-card group glass-card rounded-2xl overflow-hidden flex flex-col shadow-xl p-5 md:p-6 border-l-4 border-primary/40 hover:border-primary transition-all duration-300">
                             <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">Equity Officer (English Wing)</span>
                             <h3 class="text-white text-lg md:text-2xl font-black italic tracking-tight mb-1">Sami Hossain</h3>
                         </div>
-                        <!-- Nisat Tasnim Shila -->
+<!-- Nisat Tasnim Shila -->
                         <div class="member-card group glass-card rounded-2xl overflow-hidden flex flex-col shadow-xl p-5 md:p-6 border-l-4 border-primary/40 hover:border-primary transition-all duration-300">
                             <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">Executive Secretary of Finance (Bangla Wing)</span>
                             <h3 class="text-white text-lg md:text-2xl font-black italic tracking-tight mb-1">Nisat Tasnim Shila</h3>
                         </div>
-                        <!-- Yousuf Ibne Ishaque -->
+<!-- Yousuf Ibne Ishaque -->
                         <div class="member-card group glass-card rounded-2xl overflow-hidden flex flex-col shadow-xl p-5 md:p-6 border-l-4 border-primary/40 hover:border-primary transition-all duration-300">
                             <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">Executive Secretary of Finance (English Wing)</span>
                             <h3 class="text-white text-lg md:text-2xl font-black italic tracking-tight mb-1">Yousuf Ibne Ishaque</h3>
                         </div>
-                        <!-- Navid Parzan Authy -->
+<!-- Navid Parzan Authy -->
                         <div class="member-card group glass-card rounded-2xl overflow-hidden flex flex-col shadow-xl p-5 md:p-6 border-l-4 border-primary/40 hover:border-primary transition-all duration-300">
                             <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">Executive Secretary of Publication (Bangla Wing)</span>
                             <h3 class="text-white text-lg md:text-2xl font-black italic tracking-tight mb-1">Navid Parzan Authy</h3>
                         </div>
-                        <!-- Sheak Rafid Bin Abdullah -->
+<!-- Sheak Rafid Bin Abdullah -->
                         <div class="member-card group glass-card rounded-2xl overflow-hidden flex flex-col shadow-xl p-5 md:p-6 border-l-4 border-primary/40 hover:border-primary transition-all duration-300">
                             <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">Executive Secretary of Publication &amp; IT (English Wing)</span>
                             <h3 class="text-white text-lg md:text-2xl font-black italic tracking-tight mb-1">Sheak Rafid Bin Abdullah</h3>
                         </div>
-                        <!-- Talha Zubaer -->
+<!-- Talha Zubaer -->
                         <div class="member-card group glass-card rounded-2xl overflow-hidden flex flex-col shadow-xl p-5 md:p-6 border-l-4 border-primary/40 hover:border-primary transition-all duration-300">
                             <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">Secretary of IT (Bangla Wing)</span>
                             <h3 class="text-white text-lg md:text-2xl font-black italic tracking-tight mb-1">Talha Zubaer</h3>
                         </div>
-                        <!-- Afia Khanom Ava -->
+<!-- Afia Khanom Ava -->
                         <div class="member-card group glass-card rounded-2xl overflow-hidden flex flex-col shadow-xl p-5 md:p-6 border-l-4 border-primary/40 hover:border-primary transition-all duration-300">
                             <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">Coordinator (School - Bangla Wing)</span>
                             <h3 class="text-white text-lg md:text-2xl font-black italic tracking-tight mb-1">Afia Khanom Ava</h3>
                         </div>
-                        <!-- Tanbin Haque -->
+<!-- Tanbin Haque -->
                         <div class="member-card group glass-card rounded-2xl overflow-hidden flex flex-col shadow-xl p-5 md:p-6 border-l-4 border-primary/40 hover:border-primary transition-all duration-300">
                             <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">Coordinator (School - English Wing)</span>
                             <h3 class="text-white text-lg md:text-2xl font-black italic tracking-tight mb-1">Tanbin Haque</h3>
@@ -1983,7 +2089,7 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 max-w-md sm:max-w-none mx-auto w-full">
                         <!-- Robayeth Hasan Roktim -->
                         <div class="member-card group glass-card rounded-2xl overflow-hidden flex flex-col shadow-xl p-5 md:p-6 border-l-4 border-primary/40 hover:border-primary transition-all duration-300">
-                            <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">President (Resigned)</span>
+                            <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">President</span>
                             <h3 class="text-white text-lg md:text-2xl font-black italic tracking-tight mb-1">Robayeth Hasan Roktim</h3>
                         </div>
                         <!-- Sumaiya Khan -->
@@ -1993,22 +2099,22 @@
                         </div>
                         <!-- Jannatul Ferdous Juicy -->
                         <div class="member-card group glass-card rounded-2xl overflow-hidden flex flex-col shadow-xl p-5 md:p-6 border-l-4 border-primary/40 hover:border-primary transition-all duration-300">
-                            <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">Organizing Secretary (Resigned)</span>
+                            <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">Organizing Secretary</span>
                             <h3 class="text-white text-lg md:text-2xl font-black italic tracking-tight mb-1">Jannatul Ferdous Juicy</h3>
                         </div>
                         <!-- Junnun Saif -->
                         <div class="member-card group glass-card rounded-2xl overflow-hidden flex flex-col shadow-xl p-5 md:p-6 border-l-4 border-primary/40 hover:border-primary transition-all duration-300">
-                            <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">Joint Secretary (Resigned)</span>
+                            <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">Joint Secretary</span>
                             <h3 class="text-white text-lg md:text-2xl font-black italic tracking-tight mb-1">Junnun Saif</h3>
                         </div>
                         <!-- Asif Alamgir Sagar -->
                         <div class="member-card group glass-card rounded-2xl overflow-hidden flex flex-col shadow-xl p-5 md:p-6 border-l-4 border-primary/40 hover:border-primary transition-all duration-300">
-                            <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">Executive Secretary of Finance (Resigned)</span>
+                            <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">Executive Secretary of Finance</span>
                             <h3 class="text-white text-lg md:text-2xl font-black italic tracking-tight mb-1">Asif Alamgir Sagar</h3>
                         </div>
                         <!-- Md. Safwan Abdullah -->
                         <div class="member-card group glass-card rounded-2xl overflow-hidden flex flex-col shadow-xl p-5 md:p-6 border-l-4 border-primary/40 hover:border-primary transition-all duration-300">
-                            <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">Executive Member (Resigned)</span>
+                            <span class="text-primary font-semibold text-[10px] md:text-xs tracking-widest uppercase mb-1">Executive Member</span>
                             <h3 class="text-white text-lg md:text-2xl font-black italic tracking-tight mb-1">Md. Safwan Abdullah</h3>
                         </div>
                     </div>
@@ -2312,6 +2418,8 @@
                 </div>
             </section>
             <div class="inner-page-content max-w-7xl mx-auto px-4 md:px-margin-desktop relative z-10 pb-16 md:pb-24">
+                <!-- Founding Moderator card rendered by JS from FOUNDING_MODERATOR (see the script at the bottom) -->
+                <div id="founding-moderator-slot"></div>
                 <!-- Moderator cards rendered by JS from the MODERATORS array (see the script at the bottom) -->
                 <div id="moderators-grid"></div>
             </div>
@@ -2332,6 +2440,20 @@
             </section>
             <div class="inner-page-content max-w-4xl mx-auto px-4 md:px-margin-desktop relative z-10 pb-16 md:pb-24">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8 max-w-md sm:max-w-none mx-auto w-full mb-8 md:mb-12">
+                    <!-- Aurgho Aurpon -->
+                    <div class="member-card border-draw group glass-card rounded-2xl overflow-hidden flex flex-col shadow-2xl p-4">
+                        <div class="aspect-[4/5] overflow-hidden mb-4 rounded-xl bg-surface-container-lowest relative">
+                            <div class="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                                <img src="https://res.cloudinary.com/dd1x7wc7y/image/upload/v1779793489/1-removebg-preview_rwymms.png" alt="" loading="lazy" class="w-12 opacity-70">
+                                <span class="text-[9px] uppercase tracking-widest text-on-surface-variant/60 font-bold">DSDC</span>
+                            </div>
+                            <img loading="lazy" alt="Aurgho Aurpon" src="images/founders/Aurpon.jpeg" onerror="this.style.display='none'" class="image-zoom relative w-full h-full object-cover transition-all duration-500">
+                        </div>
+                        <div class="px-2 pb-2 flex flex-col flex-grow">
+                            <span class="text-secondary text-[9px] md:text-[10px] uppercase tracking-widest mb-1 font-bold block">Founder</span>
+                            <h3 class="text-on-surface text-lg md:text-xl mb-1.5 font-bold">Aurgho Aurpon</h3>
+                        </div>
+                    </div>
                     <!-- Safikul Islam Shawon -->
                     <div class="member-card border-draw group glass-card rounded-2xl overflow-hidden flex flex-col shadow-2xl p-4">
                         <div class="aspect-[4/5] overflow-hidden mb-4 rounded-xl bg-surface-container-lowest relative">
@@ -2347,20 +2469,6 @@
                         </div>
                     </div>
 
-                    <!-- Aurgho Aurpon -->
-                    <div class="member-card border-draw group glass-card rounded-2xl overflow-hidden flex flex-col shadow-2xl p-4">
-                        <div class="aspect-[4/5] overflow-hidden mb-4 rounded-xl bg-surface-container-lowest relative">
-                            <div class="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                                <img src="https://res.cloudinary.com/dd1x7wc7y/image/upload/v1779793489/1-removebg-preview_rwymms.png" alt="" loading="lazy" class="w-12 opacity-70">
-                                <span class="text-[9px] uppercase tracking-widest text-on-surface-variant/60 font-bold">DSDC</span>
-                            </div>
-                            <img loading="lazy" alt="Aurgho Aurpon" src="images/founders/Aurpon.jpeg" onerror="this.style.display='none'" class="image-zoom relative w-full h-full object-cover transition-all duration-500">
-                        </div>
-                        <div class="px-2 pb-2 flex flex-col flex-grow">
-                            <span class="text-secondary text-[9px] md:text-[10px] uppercase tracking-widest mb-1 font-bold block">Founder</span>
-                            <h3 class="text-on-surface text-lg md:text-xl mb-1.5 font-bold">Aurgho Aurpon</h3>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Speech block rendered by JS from FOUNDER_SPEECH (hidden while empty) -->
@@ -2472,10 +2580,6 @@
                                 </h2>
                                 <div class="w-24 md:w-32 h-1 bg-gradient-to-r from-primary-container to-transparent rounded-full mx-auto md:mx-0"></div>
                             </div>
-                            <a href="#archive" class="magnetic-btn mt-6 md:mt-0 px-6 py-3 md:py-3.5 glass-card text-[#94ccff] border border-[#94ccff]/30 hover:border-[#94ccff] hover:bg-[#94ccff]/10 transition-all flex items-center gap-3 font-label-md text-[10px] md:text-xs group rounded-xl uppercase tracking-[0.2em] shadow-lg w-full sm:w-auto justify-center">
-                                Explore Archive 
-                                <span class="material-symbols-outlined group-hover:translate-x-2 transition-transform">arrow_right_alt</span>
-                            </a>
                         </div>
 
                         <!-- Past Events — cards are rendered by JS from the PAST_EVENTS array (see the script at the bottom of this file) -->
@@ -3104,7 +3208,7 @@
             
             // De-activate all main menu active indicators
             document.querySelectorAll('#top-nav .nav-link').forEach(a => {
-                a.classList.remove('text-primary', 'font-black', 'border-b-2', 'border-primary', 'pb-1');
+                a.classList.remove('text-primary', 'font-black', 'nav-active');
                 a.classList.add('text-on-surface-variant');
             });
             // Close the Leaders dropdown on navigation
@@ -3141,7 +3245,8 @@
             'leaders-school-panel': 'page-school-panel',
             'events': 'page-events',
             'achievements': 'page-achievements',
-            'archive': 'page-archive',
+            // 'archive' is intentionally absent: #archive redirects to Home
+            // (the Archive page markup is kept in the file but unreachable).
             'courses': 'page-courses',
             'contact': 'page-contact',
             'login': 'page-auth',
@@ -3156,7 +3261,6 @@
             'page-school-panel': 'nav-link-leaders',
             'page-events': 'nav-link-events',
             'page-achievements': 'nav-link-achieve',
-            'page-archive': 'nav-link-archive',
             'page-courses': 'nav-courses',
             'page-contact': 'nav-link-contact'
         };
@@ -3181,6 +3285,11 @@
         }
 
         function showPage(id, tab) {
+            if (id === 'page-archive') {
+                // Archive was removed from the nav — send any straggler to Home
+                showHome();
+                return;
+            }
             if (id === 'page-admin') {
                 // Admin Panel: admins only — anyone else goes to the login page
                 sessionReady.then(() => {
@@ -3269,7 +3378,7 @@
             // Highlight link in nav
             const activeLink = document.getElementById(ACTIVE_LINK_MAP[id] || '');
             if (activeLink) {
-                activeLink.classList.add('text-primary', 'font-black', 'border-b-2', 'border-primary', 'pb-1');
+                activeLink.classList.add('text-primary', 'font-black', 'nav-active');
                 activeLink.classList.remove('text-on-surface-variant');
             }
             // Scroll to top (kills any in-flight smooth scroll so it can't drag the new page down)
@@ -4630,15 +4739,18 @@
         // ============================================================
         const MODERATORS = [
             {
-                name: 'Amina Akter',
-                designation: 'Assistant Teacher (Bangla)',
-                email: 'aminaayat449@gmail.com',
-                image: 'images/moderators/Amina_Akter.jpeg',
-                speech: `জ্ঞান মানুষের মনের অজ্ঞতাকে দূর করে তাকে নম্র ও সংযত হতে শেখায়। ঠিক দার্শনিক সক্রেটিস বলেছিলেন, “আমি জানি যে আমি কিছুই জানি না।” এই একটিমাত্র স্বীকারোক্তি তাকে পৃথিবীর অন্যতম জ্ঞানী মানুষ বানিয়েছিল। কারণ, যে মানুষ মনে করে সে সব জানে, তার শেখার দরজা বন্ধ হয়ে যায়। তাই আমাদের উচিত তথ্য নিজের মধ্যে জমা না করে, সেই তথ্যকে জ্ঞানে রূপান্তর করা এবং একটা মানুষের কল্যাণে কাজে লাগানো।`
+                name: 'Naznen Karim',
+                designation: 'Demonstrator, Higher Mathematics',
+                email: 'karimnaznen@gmail.com',
+                image: 'images/moderators/Nazneen_Haque.jpeg',
+                speech: `ঢাকা শাহীন ডিবেটিং ক্লাব (DSDC) তার পথচলার অনেকগুলো বছর পেরিয়ে এসেছে। বাংলাদেশের স্কুল এবং কলেজ পর্যায়ের বিতর্ক  ধারায় একটি উজ্জ্বল নাম DSDC ।  বিতর্ক করা, প্রতিযোগিতা আয়োজন,নতুন বিতার্কিক তৈরি, সাংগঠনিক সক্ষমতা সব হ্মেত্রে ক্লাবটি অসাধারণ কাজ করে চলেছে।
+বিতর্ক এমন একটি সহ: শিক্ষা কার্যক্রম যা একজন শিক্ষার্থীর সার্বিক মেধা ও ব্যাক্তিত্বের বিকাশে অনন্য ভূমিকা পালন করে।  এটি শিকার শক্তিশালী মাধ্যম।  DSDC এই মাধ্যমকে আরো শক্তিশালী এবং সময়পযোগী করে গড়ে তোলায় ভূমিকা পালন করবে সে চেস্টা এবং প্রয়োজনীয় পদক্ষেপ আমরা গ্রহণ করবো।
+DSDC এর হাত ধরে অনেক বিতার্কিক ও সংগঠক দেশ ও দেশের বাইরে বিতর্ক অংগনকে আলোকিত করছে। আগামী তেও ও ধারা বজায় থাকবে, এ আশা ব্যক্ত করছি।
+ধন্যবাদ`
             },
             {
                 name: 'Ruksana Akter',
-                designation: 'Demonstrator',
+                designation: 'Demonstrator, Psychology',
                 email: 'ruksanaskterrumi15@gmail.com',
                 image: 'images/moderators/Ruksana_Akter.jpeg',
                 speech: `আসসালামু আলাইকুম।
@@ -4658,16 +4770,26 @@
 “যুক্তিতে হোক চিন্তার বিকাশ, বিতর্কে হোক জ্ঞানের বিস্তার, আর ভিন্নমতের প্রতি শ্রদ্ধায় গড়ে উঠুক সুন্দর আগামী”।`
             },
             {
-                name: 'Naznen Karim',
-                designation: 'Demonstrator, Higher Mathematics',
-                email: 'karimnaznen@gmail.com',
-                image: 'images/moderators/Nazneen_Haque.jpeg',
-                speech: `ঢাকা শাহীন ডিবেটিং ক্লাব (DSDC) তার পথচলার অনেকগুলো বছর পেরিয়ে এসেছে। বাংলাদেশের স্কুল এবং কলেজ পর্যায়ের বিতর্ক  ধারায় একটি উজ্জ্বল নাম DSDC ।  বিতর্ক করা, প্রতিযোগিতা আয়োজন,নতুন বিতার্কিক তৈরি, সাংগঠনিক সক্ষমতা সব হ্মেত্রে ক্লাবটি অসাধারণ কাজ করে চলেছে।
-বিতর্ক এমন একটি সহ: শিক্ষা কার্যক্রম যা একজন শিক্ষার্থীর সার্বিক মেধা ও ব্যাক্তিত্বের বিকাশে অনন্য ভূমিকা পালন করে।  এটি শিকার শক্তিশালী মাধ্যম।  DSDC এই মাধ্যমকে আরো শক্তিশালী এবং সময়পযোগী করে গড়ে তোলায় ভূমিকা পালন করবে সে চেস্টা এবং প্রয়োজনীয় পদক্ষেপ আমরা গ্রহণ করবো।
-DSDC এর হাত ধরে অনেক বিতার্কিক ও সংগঠক দেশ ও দেশের বাইরে বিতর্ক অংগনকে আলোকিত করছে। আগামী তেও ও ধারা বজায় থাকবে, এ আশা ব্যক্ত করছি।
-ধন্যবাদ`
+                name: 'Amina Akter',
+                designation: 'Assistant Teacher (Bangla)',
+                email: 'aminaayat449@gmail.com',
+                image: 'images/moderators/Amina_Akter.jpeg',
+                speech: `জ্ঞান মানুষের মনের অজ্ঞতাকে দূর করে তাকে নম্র ও সংযত হতে শেখায়। ঠিক দার্শনিক সক্রেটিস বলেছিলেন, “আমি জানি যে আমি কিছুই জানি না।” এই একটিমাত্র স্বীকারোক্তি তাকে পৃথিবীর অন্যতম জ্ঞানী মানুষ বানিয়েছিল। কারণ, যে মানুষ মনে করে সে সব জানে, তার শেখার দরজা বন্ধ হয়ে যায়। তাই আমাদের উচিত তথ্য নিজের মধ্যে জমা না করে, সেই তথ্যকে জ্ঞানে রূপান্তর করা এবং একটা মানুষের কল্যাণে কাজে লাগানো।`
             }
         ];
+
+        // Rendered above the MODERATORS grid (kept separate so the 2x2 grid
+        // order/contents are unaffected). Empty email/speech lines are hidden;
+        // filling them in later makes them appear automatically.
+        const FOUNDING_MODERATOR = {
+            label: 'Founding Moderator',
+            name: 'Sajjad Hossain',
+            designation: 'Vice Principal (College)',
+            institution: 'BAF Shaheen College Dhaka',
+            image: 'images/moderators/sajjad.jpeg',
+            email: '',
+            speech: ''
+        };
 
         function openSpeechModal(mod, trigger) {
             const photo = document.getElementById('speech-modal-photo');
@@ -4738,6 +4860,50 @@ DSDC এর হাত ধরে অনেক বিতার্কিক ও স
         }
         renderModerators();
 
+        function renderFoundingModerator() {
+            const slot = document.getElementById('founding-moderator-slot');
+            if (!slot) return;
+            const fm = FOUNDING_MODERATOR;
+            if (!fm || !fm.name) return;
+            const labelLine = fm.label
+                ? '<span class="text-[#94ccff] text-[10px] md:text-[11px] uppercase tracking-[0.3em] mb-2 font-extrabold block">' + escapeHtml(fm.label) + '</span>'
+                : '';
+            const desigLine = fm.designation
+                ? '<span class="text-secondary text-[10px] md:text-[11px] uppercase tracking-widest mb-1 font-bold block">' + escapeHtml(fm.designation) + '</span>'
+                : '';
+            const instLine = fm.institution
+                ? '<p class="text-on-surface-variant text-xs font-body-md">' + escapeHtml(fm.institution) + '</p>'
+                : '';
+            const emailLine = fm.email
+                ? '<p class="moderator-email text-on-surface-variant text-xs font-body-md">' + escapeHtml(fm.email) + '</p>'
+                : '';
+            const speechBtn = fm.speech
+                ? '<div class="mt-auto pt-4"><button type="button" class="mod-read-msg self-start px-4 py-2 rounded-lg bg-primary/10 border border-primary/30 text-[#94ccff] text-[10px] md:text-[11px] font-bold uppercase tracking-widest hover:bg-primary/20 transition-colors cursor-pointer" data-founding="1">Read message</button></div>'
+                : '';
+            slot.innerHTML = '' +
+                '<div class="member-card mod-card founding-mod-card group glass-card rounded-2xl overflow-hidden shadow-2xl">' +
+                    '<div class="mod-card-photo">' +
+                        '<div class="absolute inset-0 flex flex-col items-center justify-center gap-2">' +
+                            '<img src="' + PAST_EVENT_FALLBACK_LOGO + '" alt="" loading="lazy" class="w-12 opacity-70">' +
+                            '<span class="text-[9px] uppercase tracking-widest text-on-surface-variant/60 font-bold">DSDC</span>' +
+                        '</div>' +
+                        '<img loading="lazy" alt="' + escapeHtml(fm.name) + '" src="' + escapeHtml(fm.image) + '" onerror="this.style.display=\'none\'" class="image-zoom relative w-full h-full object-cover object-top transition-all duration-500">' +
+                    '</div>' +
+                    '<div class="mod-card-details">' +
+                        labelLine +
+                        '<h3 class="text-on-surface text-xl md:text-2xl font-bold mb-2 leading-tight">' + escapeHtml(fm.name) + '</h3>' +
+                        desigLine +
+                        '<div class="h-px bg-white/10 my-3"></div>' +
+                        instLine +
+                        emailLine +
+                        speechBtn +
+                    '</div>' +
+                '</div>';
+            const btn = slot.querySelector('[data-founding]');
+            if (btn) btn.addEventListener('click', function () { openSpeechModal(fm, btn); });
+        }
+        renderFoundingModerator();
+
         // ============================================================
         // About page stats — count up when scrolled into view.
         // The correct number is already in the HTML (works without JS).
@@ -4795,6 +4961,9 @@ DSDC এর হাত ধরে অনেক বিতার্কিক ও স
 
         reinitReveal();
     </script>
+
+
+
 
 
 </body></html>
