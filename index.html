@@ -5073,6 +5073,9 @@ DSDC এর হাত ধরে অনেক বিতার্কিক ও স
             setTimeout(() => {
                 const elements = document.querySelectorAll('.reveal');
                 elements.forEach(el => {
+                    // The hero is always shown straight away. Re-hiding it here and waiting
+                    // for the observer is what left it blank until the user scrolled.
+                    if (el.closest('#hero')) { el.classList.add('active'); return; }
                     el.classList.remove('active');
                     revealObserver.observe(el);
                 });
